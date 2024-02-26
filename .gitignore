@@ -1,0 +1,6 @@
+requests/**
+results/**
+cmake-build-debug/**
+
+.DS_Store
+.idea

@@ -49,9 +49,9 @@ Block _combine_two_bytes(uint8_t a, uint8_t  b) {
 }
 OctNode _convert_octnode(uint8_t a) {
     return {
-        ((a >> 7 & 0x1) > 0),
-        static_cast<PearlLandState>(static_cast<uint8_t>(a >> 4 & 0x7)),
-        static_cast<CollisionState>(static_cast<uint8_t>(a & 0x15))
+        ((a >> 7 & 1) > 0),
+        static_cast<PearlLandState>(static_cast<uint8_t>(a >> 4 & 7)),
+        static_cast<CollisionState>(static_cast<uint8_t>(a & 15))
     };
 }
 
@@ -93,7 +93,7 @@ void PathfindRequest::ReadRequest(std::string file) {
     uint32_t target_size = _readInt(head);
     for (uint32_t i = 0; i < target_size; i++) {
         auto x = static_cast<int32_t>(_readInt(head));
-        auto y = static_cast<int32_t>(_readInt(head) + 140);
+        auto y = static_cast<int32_t>(_readInt(head));
         auto z = static_cast<int32_t>(_readInt(head));
 
         target.push_back({x,y,z});

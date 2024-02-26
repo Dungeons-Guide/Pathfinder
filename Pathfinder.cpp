@@ -437,7 +437,7 @@ void Pathfinder::ShadowCast(uint32_t centerX, uint32_t centerY, uint32_t centerZ
             int trZ = centerZ + x * trMatrix13 + y * trMatrix23 + startZ * trMatrix33;
 
             bool localBlocked = false;
-            if (trX < 0 || trY < minY || trZ < 0 || trX >=request.blockWorld.xLen || trY >= maxY || trZ >= request.blockWorld.zLen) {
+            if (trX < 0 || trY < minY/2 || trZ < 0 || trX >=request.blockWorld.xLen || trY >= maxY/2 || trZ >= request.blockWorld.zLen) {
                 localBlocked = true;
             } else {
                 localBlocked = request.blockWorld.getBlock(trX, trY, trZ).id != 0 && startZ != 0;
@@ -553,6 +553,8 @@ std::vector<Coordinate> Pathfinder::RealShadowCast(Coordinate start, uint32_t ra
 
 Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
     int state = 0;
+    this->minY = -1;
+    this-> maxY = -1;
     for (int i = 0; i < 256; i++) {
         Block b = req.blockWorld.getBlock(8,i,8);
         if (b.id != 0 && state == 0){
@@ -563,6 +565,20 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
             this->maxY = i*2;
         } else if (b.id != 0 && state == 2) {
             state = 1;
+        }
+    }
+    if (minY == maxY) {
+        for (int i = 0; i < 256; i++) {
+            Block b = req.blockWorld.getBlock(req.blockWorld.xLen - 8,i,req.blockWorld.zLen - 8);
+            if (b.id != 0 && state == 0){
+                state = 1;
+                this->minY = i * 2;
+            } else if (b.id == 0 && state == 1) {
+                state = 2;
+                this->maxY = i*2;
+            } else if (b.id != 0 && state == 2) {
+                state = 1;
+            }
         }
     }
     nodes = vector<vector<vector<PathfindNode>>> (request.octNodeWorld.xLen + 10,

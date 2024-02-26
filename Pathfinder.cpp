@@ -128,7 +128,7 @@ void Pathfinder::Populate() {
                 for (Coordinate target : RealShadowCast(start, 61)) {
                     if (_distSq(target.x - start.x, target.y - start.y, target.z - start.z) >61 * 61) continue;
                     if (target.x * 2 + 1 < 2) continue;
-                    if (target.y * 2 + 1 < minY - 5) continue;
+                    if (target.y * 2 - 2 < minY - 5) continue;
                     if (target.z * 2 + 1 < 2) continue;
                     if (target.x * 2 + 1 >= request.octNodeWorld.xLen ) continue;
                     if (target.y * 2 + 1 >= maxY + 5) continue;
@@ -136,7 +136,7 @@ void Pathfinder::Populate() {
 
                     Coordinate neighborCoordinate = {
                             target.x * 2 + 1,
-                            target.y * 2 + 1,
+                            target.y * 2 - 2,
                             target.z * 2 + 1
                     };
                     PathfindNode& neighbor = GetNode(neighborCoordinate);
@@ -436,12 +436,7 @@ void Pathfinder::ShadowCast(uint32_t centerX, uint32_t centerY, uint32_t centerZ
             int trY = centerY + x * trMatrix12 + y * trMatrix22 + startZ * trMatrix32;
             int trZ = centerZ + x * trMatrix13 + y * trMatrix23 + startZ * trMatrix33;
 
-            bool localBlocked = false;
-            if (trX < 0 || trY < minY/2 || trZ < 0 || trX >=request.blockWorld.xLen || trY >= maxY/2 || trZ >= request.blockWorld.zLen) {
-                localBlocked = true;
-            } else {
-                localBlocked = request.blockWorld.getBlock(trX, trY, trZ).id != 0 && startZ != 0;
-            }
+            bool localBlocked = request.blockWorld.getBlock(trX, trY, trZ).id != 0 && startZ != 0;
             if (endSlopeX == 1 && x == endX && blockMap[y - startY][x-1 - startX]) localBlocked = true;
             if (endSlopeY == 1 && y == endY && blockMap[y-1 - startY][x - startX]) localBlocked = true;
 
@@ -568,6 +563,7 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
         }
     }
     if (minY == maxY) {
+        state = 0;
         for (int i = 0; i < 256; i++) {
             Block b = req.blockWorld.getBlock(req.blockWorld.xLen - 8,i,req.blockWorld.zLen - 8);
             if (b.id != 0 && state == 0){

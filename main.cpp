@@ -44,8 +44,7 @@ int main(int argc, char **argv) {
 
     std::cout << "ID: " << request.uuid << " NAME: " << request.name << std::endl;
     std::cout << "PF ID: " << request.id << std::endl;
-    std::cout << "Target Cnt: "<< request.target.size() << std::endl;
-    std::cout << "World Size: " << request.blockWorld.xLen * request.blockWorld.yLen * request.blockWorld.zLen << std::endl;
+    std::cout << "Target Cnt: "<< request.target.size() << " World Size: " << request.blockWorld.xLen * request.blockWorld.yLen * request.blockWorld.zLen << std::endl;
 
     auto start = std::chrono::steady_clock::now();
 

@@ -73,9 +73,11 @@ void Pathfinder::Populate() {
 
     while (!pq.empty()) {
         // explore.
+        auto scoreitthinks = pq.top().first;
         auto coord = pq.top().second;
         pq.pop();
         PathfindNode& n = GetNode(coord.x, coord.y, coord.z);
+        if (n.gScore < scoreitthinks) continue;
 
         auto octNode = request.octNodeWorld.getOctNode(coord);
 

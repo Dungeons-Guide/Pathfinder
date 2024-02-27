@@ -10,6 +10,7 @@
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
+#include <aws/s3/model/DeleteObjectRequest.h>
 #include <aws/lambda-runtime/runtime.h>
 #include <iostream>
 #include <memory>
@@ -157,6 +158,12 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 
     AWS_LOGSTREAM_INFO(TAG, "Saved as "<< request2.GetKey() << " on " << request2.GetBucket());
 
+    Aws::S3::Model::DeleteObjectRequest request3;
+    request3.WithBucket(bucket).WithKey(key);
+    Aws::S3::Model::DeleteObjectOutcome outcome3 = client.DeleteObject(request3);
+    if (!outcome3.IsSuccess()) {
+        AWS_LOGSTREAM_ERROR(TAG, "Failed to cleanup s3 file: " << request3.GetBucket()<< "/"<< request3.GetKey());
+    }
 
     return invocation_response::success(request2.GetBucket()+"/"+request2.GetKey(), "text/plain");
 }

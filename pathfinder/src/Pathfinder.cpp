@@ -568,6 +568,10 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
             state = 1;
         }
         std::cout << "Found B: " << (int)b.id << "Data: " << (int)b.data << std::endl;
+        OctNode oct = req.octNodeWorld.getOctNode(8, i, 8);
+
+        std::cout << "Found O: " << (int)oct.isInsta << "Pearl: " << (int)oct.pearl << "Block" << (int)oct.data << std::endl;
+
     }
     if (minY == maxY) {
         state = 0;

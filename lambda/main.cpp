@@ -54,18 +54,27 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     }
 
     auto v = json.View();
-    if (!v.ValueExists("s3") || !v.GetObject("s3").IsObject()) {
-        return invocation_response::failure("Missing event value s3", "InvalidJSON");
+    if (!v.ValueExists("Records") || !v.GetObject("Records").IsListType()) {
+        return invocation_response::failure("Missing event value Records", "InvalidJSON");
     }
-    auto s3Data = v.GetObject("s3");
+    auto records = v.GetObject("Records").AsArray();
+    if (records.GetLength() != 1) {
+        return invocation_response::failure("Records size is not 1: "+std::to_string(records.GetLength()), "InvalidJSON");
+    }
+    auto s3s3 = records.GetItem(0).AsObject();
+
+    if (!s3s3.ValueExists("s3") || !s3s3.GetObject("s3").IsObject()) {
+        return invocation_response::failure("Missing event value Records.[0].s3", "InvalidJSON");
+    }
+    auto s3Data = s3s3.GetObject("s3");
     if (!s3Data.ValueExists("bucket") || !v.GetObject("bucket").IsObject() || !v.GetObject("bucket").GetObject("name").IsString()) {
-        return invocation_response::failure("Missing event value s3.bucket.name", "InvalidJSON");
+        return invocation_response::failure("Missing event value Records.[0].s3.bucket.name", "InvalidJSON");
     }
-    auto bucket = v.GetObject("bucket").GetString("name");
+    auto bucket = s3Data.GetObject("bucket").GetString("name");
     if (!s3Data.ValueExists("object") || !v.GetObject("object").IsObject() || !v.GetObject("object").GetObject("key").IsString()) {
-        return invocation_response::failure("Missing event value s3.object.key", "InvalidJSON");
+        return invocation_response::failure("Missing event value Records.[0].s3.object.key", "InvalidJSON");
     }
-    auto key = v.GetObject("object").GetString("key");
+    auto key = s3Data.GetObject("object").GetString("key");
 
     AWS_LOGSTREAM_INFO(TAG, "Attempting to download file from s3://" << bucket << "/" << key);
 

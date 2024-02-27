@@ -81,6 +81,11 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 
     Aws::S3::Model::GetObjectRequest request;
     request.WithBucket(bucket).WithKey(key);
+    request.SetResponseStreamFactory(
+            [=]() {
+                return Aws::New<std::stringstream>("S3DOWNLOAD", std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+            }
+    );
 
     auto outcome = client.GetObject(request);
     if (!outcome.IsSuccess()) {
@@ -91,12 +96,9 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     AWS_LOGSTREAM_INFO(TAG, "Download completed!");
     auto& s = outcome.GetResult().GetBody();
 
-    std::stringstream ss;
-    ss << s.rdbuf();
-
     PathfindRequest pathfindRequest;
     try {
-        pathfindRequest.ReadRequest(ss);
+        pathfindRequest.ReadRequest(s);
     } catch (std::string &ex) {
         AWS_LOGSTREAM_ERROR(TAG, "Parsing failed with error: " << ex);
         return invocation_response::failure(ex, "Parsing Failure"); ;
@@ -105,7 +107,8 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
 
     AWS_LOGSTREAM_INFO(TAG, "ID: " << pathfindRequest.uuid << " NAME: " << pathfindRequest.name);
     AWS_LOGSTREAM_INFO(TAG, "PF ID: " << pathfindRequest.id);
-    AWS_LOGSTREAM_INFO(TAG, "Target Cnt: " << pathfindRequest.target.size() << " World Size: " <<pathfindRequest.blockWorld.xLen * pathfindRequest.blockWorld.yLen * pathfindRequest.blockWorld.zLen);
+    AWS_LOGSTREAM_INFO(TAG, "Target Cnt: " << pathfindRequest.target.size() << " World Size: " <<pathfindRequest.blockWorld.xLen * pathfindRequest.blockWorld.yLen * pathfindRequest.blockWorld.zLen << " Node Size: " << (
+            pathfindRequest.octNodeWorld.xLen * pathfindRequest.octNodeWorld.yLen * pathfindRequest.octNodeWorld.zLen));
 
     auto start = std::chrono::steady_clock::now();
 
@@ -140,7 +143,7 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     auto time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     request2.WithBucket(std::getenv("TARGET_BUCKET")).WithKey(key+"-"+std::to_string(time)+".pfres");
 
-    std::shared_ptr<Aws::IOStream> inputData = Aws::MakeShared<Aws::StringStream>("StringStream");
+    std::shared_ptr<Aws::IOStream> inputData = Aws::MakeShared<Aws::StringStream>("StringStream", std::stringstream::in | std::stringstream::out | std::stringstream::binary);
     result.WriteTo(*inputData);
     request2.SetBody(inputData);
 
@@ -179,6 +182,8 @@ int main()
         config.caFile = "/etc/pki/tls/certs/ca-bundle.crt";
 
         S3::S3Client client(config);
+
+
         auto handler_fn = [&client](aws::lambda_runtime::invocation_request const& req) {
             return my_handler(req, client);
         };

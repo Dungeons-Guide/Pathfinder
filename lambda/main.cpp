@@ -67,11 +67,11 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
         return invocation_response::failure("Missing event value Records.[0].s3", "InvalidJSON");
     }
     auto s3Data = s3s3.GetObject("s3");
-    if (!s3Data.ValueExists("bucket") || !v.GetObject("bucket").IsObject() || !v.GetObject("bucket").GetObject("name").IsString()) {
+    if (!s3Data.ValueExists("bucket") || !s3Data.GetObject("bucket").IsObject() || !s3Data.GetObject("bucket").GetObject("name").IsString()) {
         return invocation_response::failure("Missing event value Records.[0].s3.bucket.name", "InvalidJSON");
     }
     auto bucket = s3Data.GetObject("bucket").GetString("name");
-    if (!s3Data.ValueExists("object") || !v.GetObject("object").IsObject() || !v.GetObject("object").GetObject("key").IsString()) {
+    if (!s3Data.ValueExists("object") || !s3Data.GetObject("object").IsObject() || !s3Data.GetObject("object").GetObject("key").IsString()) {
         return invocation_response::failure("Missing event value Records.[0].s3.object.key", "InvalidJSON");
     }
     auto key = s3Data.GetObject("object").GetString("key");

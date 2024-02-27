@@ -109,7 +109,8 @@ void PathfindRequest::ReadRequest(std::istream& infile) {
     blockWorld.zLen = _readInt(head);
     blockWorld.yLen = _readInt(head);
     blockWorld.blocks.resize(blockWorld.xLen * blockWorld.yLen * blockWorld.zLen);
-    combine_pairs(head, head += (blockWorld.xLen * blockWorld.yLen * blockWorld.zLen * 2), blockWorld.blocks.begin(), _combine_two_bytes);
+    combine_pairs(head, head + (blockWorld.xLen * blockWorld.yLen * blockWorld.zLen * 2), blockWorld.blocks.begin(), _combine_two_bytes);
+    head += (blockWorld.xLen * blockWorld.yLen * blockWorld.zLen * 2);
 
     magicVal = _readUTF(head);
     if (magicVal != "CLPL") {
@@ -119,7 +120,8 @@ void PathfindRequest::ReadRequest(std::istream& infile) {
     octNodeWorld.zLen = _readInt(head);
     octNodeWorld.yLen = _readInt(head);
     octNodeWorld.nodes.resize(octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen);
-    std::transform(head,  head += (octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen), octNodeWorld.nodes.begin(), _convert_octnode );
+    std::transform(head,  head + (octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen), octNodeWorld.nodes.begin(), _convert_octnode );
+    head += (octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen);
 }
 
 

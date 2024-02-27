@@ -557,21 +557,16 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
     this->minY = -1;
     this-> maxY = -1;
     for (int i = 0; i < 256; i++) {
-        Block b = req.blockWorld.getBlock(8,i,8);
-        if (b.id != 0 && state == 0){
+        Block b = req.blockWorld.getBlock(8, i, 8);
+        if (b.id != 0 && state == 0) {
             state = 1;
             this->minY = i * 2;
         } else if (b.id == 0 && state == 1) {
             state = 2;
-            this->maxY = i*2;
+            this->maxY = i * 2;
         } else if (b.id != 0 && state == 2) {
             state = 1;
         }
-        std::cout << "Found B: " << (int)b.id << "Data: " << (int)b.data << std::endl;
-        OctNode oct = req.octNodeWorld.getOctNode(8, i, 8);
-
-        std::cout << "Found O: " << (int)oct.isInsta << "Pearl: " << (int)oct.pearl << "Block" << (int)oct.data << std::endl;
-
     }
     if (minY == maxY) {
         state = 0;

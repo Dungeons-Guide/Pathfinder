@@ -46,7 +46,6 @@ void combine_pairs(InIter in, InIter in_end, OutIter out, OutT (*func)(InT, InT)
 }
 
 Block _combine_two_bytes(uint8_t a, uint8_t  b) {
-    std::cout << "Taking " << (int)a << " and" << (int)b << std::endl;
     return {a , b};
 }
 OctNode _convert_octnode(uint8_t a) {

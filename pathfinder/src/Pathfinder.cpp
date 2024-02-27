@@ -425,6 +425,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                             int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
                             vector<Coordinate> &result) {
     if (startZ > radius) return;
+    shadowcasts++;
     // boom. radius is manhatten radius. lol.
     double realZ = startZ;
 
@@ -586,6 +587,6 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
     nodes = vector<vector<vector<PathfindNode>>> (request.octNodeWorld.xLen + 10,
                                                   vector<vector<PathfindNode> >(request.octNodeWorld.zLen + 10,
                                                                                 vector<PathfindNode>((maxY - minY) + 10, PathfindNode{})));
-
+    shadowcasts = 0;
     std::cout << "Min " << minY << " Max " <<maxY << std::endl;
 }

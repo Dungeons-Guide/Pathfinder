@@ -90,10 +90,18 @@ int main(int argc, char **argv) {
 //                    }
 //                }
 
+// 634300
+// 19513203
+// 2856
+// 1263476575
+// 1263477197
+// 62780341
+
             }
         }
     }
     std::cout << "Open Nodes: " << cnt << std::endl << std::endl;
+    std::cout << "Shadow cast called: " << pathfinder.shadowcasts << "times" << std::endl;
 
     std::ofstream outfile_1(output, std::ios_base::binary);
     PathfindResult result;

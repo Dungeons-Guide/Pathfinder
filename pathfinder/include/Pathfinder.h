@@ -46,6 +46,7 @@ public:
     std::vector<std::vector<std::vector<std::vector<Coordinate>>>> etherwarps;
     int minY;
     int maxY;
+    long shadowcasts;
 
     void Populate();
     PathfindNode& GetNode(int x, int  y, int  z);

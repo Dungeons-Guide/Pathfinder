@@ -1,4 +1,8 @@
+//
+// Created by syeyoung on 2024/02/27.
+//
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include "PathfindRequest.h"
 #include "Pathfinder.h"
@@ -35,8 +39,9 @@ int main(int argc, char **argv) {
 
 
     PathfindRequest request;
+    std::ifstream input_file(input, std::ios_base::binary);
     try {
-        request.ReadRequest(input);
+        request.ReadRequest(input_file);
     } catch (std::string &ex) {
         std::cerr << ex << std::endl;
         exit(-1);
@@ -90,9 +95,10 @@ int main(int argc, char **argv) {
     }
     std::cout << "Open Nodes: " << cnt << std::endl << std::endl;
 
+    std::ofstream outfile_1(output, std::ios_base::binary);
     PathfindResult result;
     result.Init(pathfinder);
-    result.WriteTo(output);
+    result.WriteTo(outfile_1);
 
 
     return 0;

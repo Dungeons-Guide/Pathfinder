@@ -3,6 +3,7 @@
 //
 
 #include "cstdint"
+#include <vector>
 #include "Pathfinder.h"
 
 #ifndef PATHFINDER2_PATHFINDRESULT_H
@@ -36,7 +37,7 @@ public:
     uint16_t resultZStart;
 
     void Init(Pathfinder& pathfinder);
-    void WriteTo(const std::string& file);
+    void WriteTo(std::ostream& file);
 };
 
 #endif //PATHFINDER2_PATHFINDRESULT_H

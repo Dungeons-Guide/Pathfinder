@@ -2,7 +2,7 @@
 // Created by syeyoung on 2024/02/26.
 //
 
-#include "PathfindResult.h"
+#include "../include/PathfindResult.h"
 #include <fstream>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
@@ -85,8 +85,8 @@ void _writeFloat(std::ostream & stream, float f) {
 }
 
 
-void PathfindResult::WriteTo(const std::string& file) {
-    std::ofstream outfile_1(file, std::ios_base::binary);
+void PathfindResult::WriteTo(std::ostream& outfile_1) {
+//
 
 
     _writeUTF(outfile_1, "RDGPF");

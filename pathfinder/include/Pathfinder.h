@@ -6,6 +6,7 @@
 #define PATHFINDER2_PATHFINDER_H
 
 #include "PathfindRequest.h"
+#include <limits>
 
 enum ConnectionType : uint8_t {
     ConnectionType_STONK_EXIT = 0,

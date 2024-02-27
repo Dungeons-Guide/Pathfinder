@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include "CollisionState.h"
 
 typedef struct {
@@ -102,7 +103,7 @@ public:
     BlockWorld blockWorld;
     OctNodeWorld octNodeWorld;
 
-    void ReadRequest(std::string file);
+    void ReadRequest(std::istream& file);
 };
 
 

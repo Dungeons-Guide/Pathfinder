@@ -2,10 +2,11 @@
 // Created by syeyoung on 2024/02/26.
 //
 
-#include "Pathfinder.h"
+#include "../include/Pathfinder.h"
 #include <queue>
 #include <iostream>
 #include <set>
+#include <cmath>
 
 
 using namespace std;

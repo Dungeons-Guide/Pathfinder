@@ -2,8 +2,9 @@
 // Created by syeyoung on 2024/02/26.
 //
 
-#include "PathfindRequest.h"
+#include "../include/PathfindRequest.h"
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 
 uint16_t _readShort(std::vector<unsigned char>::iterator &it) {
@@ -55,8 +56,8 @@ OctNode _convert_octnode(uint8_t a) {
     };
 }
 
-void PathfindRequest::ReadRequest(std::string file) {
-    std::ifstream infile(file, std::ios_base::binary);
+void PathfindRequest::ReadRequest(std::istream& infile) {
+//    std::ifstream infile(file, std::ios_base::binary);
 
     std::vector<unsigned char> buffer( (std::istreambuf_iterator<char>(infile)),{} );
     std::vector<unsigned char>::iterator head = buffer.begin();

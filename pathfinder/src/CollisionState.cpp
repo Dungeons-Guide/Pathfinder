@@ -1,7 +1,7 @@
 //
 // Created by syeyoung on 2024/02/26.
 //
-#include "CollisionState.h"
+#include "../include/CollisionState.h"
 
 bool isCanGo(CollisionState collisionState) {
     return collisionState < COLLISION_STATE_BLOCKED;

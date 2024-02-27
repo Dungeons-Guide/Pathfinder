@@ -20,7 +20,7 @@
 
 using namespace aws::lambda_runtime;
 
-char const TAG[] = "LAMBDA_ALLOC";
+char const TAG[] = "PATHFINDER";
 
 
 template <
@@ -91,12 +91,15 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     AWS_LOGSTREAM_INFO(TAG, "Download completed!");
     auto& s = outcome.GetResult().GetBody();
 
+    std::stringstream ss;
+    ss << s.rdbuf();
+
     PathfindRequest pathfindRequest;
     try {
-        pathfindRequest.ReadRequest(s);
+        pathfindRequest.ReadRequest(ss);
     } catch (std::string &ex) {
-        std::cerr << ex << std::endl;
-        exit(-1);
+        AWS_LOGSTREAM_ERROR(TAG, "Parsing failed with error: " << ex);
+        return invocation_response::failure(ex, "Parsing Failure"); ;
     }
 
 
@@ -159,7 +162,7 @@ std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetCon
 {
     return [] {
         return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
-                "console_logger", Aws::Utils::Logging::LogLevel::Trace);
+                "console_logger", Aws::Utils::Logging::LogLevel::Info);
     };
 }
 

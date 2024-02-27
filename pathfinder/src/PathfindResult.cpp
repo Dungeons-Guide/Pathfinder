@@ -25,9 +25,17 @@ void PathfindResult::Init(Pathfinder &pathfinder) {
         for (int z = 0; z < resultZLen; z++) {
             for (int x = 0; x < resultXLen; x++) {
                 auto node = pathfinder.GetNode(x,y + pathfinder.minY,z);
-                if (node.parent.x < resultXStart || node.parent.x >= resultXStart + resultXLen ||
+                if (node.type == ConnectionType_TARGET) {
+                    this->results[y * resultXLen * resultZLen + z * resultXLen + x] = {
+                            ResultCoordinate {
+                                    0,0,0
+                            },
+                            (float) node.gScore,
+                            node.type
+                    };
+                } else if ((node.parent.x < resultXStart || node.parent.x >= resultXStart + resultXLen ||
                     node.parent.y < resultYStart || node.parent.y >= resultYStart + resultYLen ||
-                    node.parent.z < resultZStart || node.parent.z >= resultZStart + resultZLen) {
+                    node.parent.z < resultZStart || node.parent.z >= resultZStart + resultZLen)) {
                     this->results[y * resultXLen * resultZLen + z * resultXLen + x] = {
                             ResultCoordinate {
                                     0,0,0

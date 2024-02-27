@@ -567,6 +567,7 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
         } else if (b.id != 0 && state == 2) {
             state = 1;
         }
+        std::cout << "Found B: " << (int)b.id << "Data: " << (int)b.data << std::endl;
     }
     if (minY == maxY) {
         state = 0;

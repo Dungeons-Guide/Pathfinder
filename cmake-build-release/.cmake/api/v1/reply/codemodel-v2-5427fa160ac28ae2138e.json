@@ -1,0 +1,135 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "pathfinder",
+					"jsonFile" : "directory-pathfinder-Release-4fc6bced6f3058d4759c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "pathfinder",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "lambda",
+					"jsonFile" : "directory-lambda-Release-4e2c82c065ea5a100a1b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "lambda",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				},
+				{
+					"build" : "cli",
+					"jsonFile" : "directory-cli-Release-75cffd84214287916bbe.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "cli",
+					"targetIndexes" : 
+					[
+						3
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					],
+					"name" : "pathfinder",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "aws-lambda-package-pathfind-request-processor::@fe4bb6a088336fc19866",
+					"jsonFile" : "target-aws-lambda-package-pathfind-request-processor-Release-331f4295c92e35a59ecf.json",
+					"name" : "aws-lambda-package-pathfind-request-processor",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "pathfind-request-processor::@fe4bb6a088336fc19866",
+					"jsonFile" : "target-pathfind-request-processor-Release-da850fa75e0e6337767e.json",
+					"name" : "pathfind-request-processor",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "pathfinder::@257c6aca936efd71bc00",
+					"jsonFile" : "target-pathfinder-Release-6130fba254763febc3a1.json",
+					"name" : "pathfinder",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "pathfinder-cli::@434c77fc11d56e0cadb1",
+					"jsonFile" : "target-pathfinder-cli-Release-a470848ec739ca59a22e.json",
+					"name" : "pathfinder-cli",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/syeyoung/Documents/dungeonsguide/pathfinder2/cmake-build-release",
+		"source" : "/Users/syeyoung/Documents/dungeonsguide/pathfinder2"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

@@ -13,7 +13,7 @@ using namespace std;
 
 typedef pair<double, Coordinate> NodePair;
 
-PathfindNode& Pathfinder::GetNode(uint32_t  x, uint32_t  y, uint32_t  z) {
+PathfindNode& Pathfinder::GetNode(int  x, int  y, int  z) {
     return nodes[x+5][z+5][y+5 - minY];
 }
 PathfindNode& Pathfinder::GetNode(const Coordinate& coord) {
@@ -76,8 +76,10 @@ void Pathfinder::Populate() {
         auto scoreitthinks = pq.top().first;
         auto coord = pq.top().second;
         pq.pop();
-        PathfindNode& n = GetNode(coord.x, coord.y, coord.z);
-        if (n.gScore < scoreitthinks) continue;
+        PathfindNode& n = GetNode(coord);
+        if (n.gScore < scoreitthinks) {
+            continue;
+        }
 
         auto octNode = request.octNodeWorld.getOctNode(coord);
 
@@ -94,19 +96,19 @@ void Pathfinder::Populate() {
                     Coordinate neighborCoordinate = {
                             coord.x, coord.y + 1, coord.z
                     };
-                    PathfindNode& neighbor = GetNode(neighborCoordinate);
+                    PathfindNode *neighbor = &GetNode(neighborCoordinate);
                     auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
                     if (neighborCoordinate.y <= minY - 5) continue;
                     if (neighborCoordinate.y >= maxY + 5) continue;
                     if (!isBlocked(neighborState) && coord.y > minY - 5 && coord.y < maxY + 5) {
                         double gScore = n.gScore + 4;
-                        if (gScore < neighbor.gScore) {
-                            neighbor.parent = coord;
-                            neighbor.stonkLen = 0;
-                            neighbor.type = ConnectionType_TELEPORT_INTO;
-                            neighbor.gScore= gScore;
+                        if (gScore < neighbor->gScore) {
+                            neighbor->parent = coord;
+                            neighbor->stonkLen = 0;
+                            neighbor->type = ConnectionType_TELEPORT_INTO;
+                            neighbor->gScore= gScore;
 
-                            pq.emplace(neighbor.gScore, neighborCoordinate);
+                            pq.emplace(neighbor->gScore, neighborCoordinate);
                         }
                     }
                 }
@@ -125,7 +127,9 @@ void Pathfinder::Populate() {
                                               (coord.z-1) / 2};
 
                 // shadow casting~
-                for (Coordinate target : RealShadowCast(start, 61)) {
+                std::vector<Coordinate> shadowcastRes = RealShadowCast(start, 61);
+                int cnt = 0;
+                for (Coordinate target : shadowcastRes) {
                     if (_distSq(target.x - start.x, target.y - start.y, target.z - start.z) >61 * 61) continue;
                     if (target.x * 2 + 1 < 2) continue;
                     if (target.y * 2 - 2 < minY - 5) continue;
@@ -139,16 +143,16 @@ void Pathfinder::Populate() {
                             target.y * 2 - 2,
                             target.z * 2 + 1
                     };
-                    PathfindNode& neighbor = GetNode(neighborCoordinate);
+                    PathfindNode *neighbor = &GetNode(neighborCoordinate);
                     auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
                     double gScore = n.gScore+ 20; // don't etherwarp unless it saves like 10 blocks
-                    if (gScore < neighbor.gScore) {
-                        neighbor.parent = coord;
-                        neighbor.stonkLen = 0;
-                        neighbor.type = ConnectionType_ETHERWARP;
-                        neighbor.gScore= gScore;
+                    if (gScore < neighbor->gScore) {
+                        neighbor->parent = coord;
+                        neighbor->stonkLen = 0;
+                        neighbor->type = ConnectionType_ETHERWARP;
+                        neighbor->gScore= gScore;
 
-                        pq.emplace(neighbor.gScore, neighborCoordinate);
+                        pq.emplace(neighbor->gScore, neighborCoordinate);
                     }
                 }
             }
@@ -174,14 +178,14 @@ void Pathfinder::Populate() {
                         coord.x + FACINGS[facingidx][0] * 2, coord.y + FACINGS[facingidx][1] * 2,
                         coord.z + FACINGS[facingidx][2] * 2
                 };
-                PathfindNode& neighbor = GetNode(neighborCoordinate);
+                PathfindNode *neighbor = &GetNode(neighborCoordinate);
                 auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
 
                 int down  =0;
                 while (!isOnGround(neighborState) && neighborCoordinate.y > minY - 5) {
                     neighborCoordinate.y -= 1;
-                    neighbor = GetNode(neighborCoordinate.x, neighborCoordinate.y, neighborCoordinate.z);
-                    neighborState = request.octNodeWorld.getOctNode(neighborCoordinate.x, neighborCoordinate.y, neighborCoordinate.z).data;
+                    neighbor = &GetNode(neighborCoordinate);
+                    neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
                     down ++;
                 }
 
@@ -190,13 +194,13 @@ void Pathfinder::Populate() {
 
                 if (!isBlocked(neighborState) && down < 10) {
                     double gScore = n.gScore+ 20 + sqrt(down*down + 16);
-                    if (gScore < neighbor.gScore) {
-                        neighbor.parent = coord;
-                        neighbor.stonkLen = 0;
-                        neighbor.type = ConnectionType_ENDERPEARL;
-                        neighbor.gScore= gScore;
+                    if (gScore < neighbor->gScore) {
+                        neighbor->parent = coord;
+                        neighbor->stonkLen = 0;
+                        neighbor->type = ConnectionType_ENDERPEARL;
+                        neighbor->gScore= gScore;
 
-                        pq.emplace(neighbor.gScore, neighborCoordinate);
+                        pq.emplace(neighbor->gScore, neighborCoordinate);
                     }
                 }
             }
@@ -220,14 +224,14 @@ void Pathfinder::Populate() {
                         coord.x + FACINGS[facingidx][0] * 2, coord.y + FACINGS[facingidx][1] * 2,
                         coord.z + FACINGS[facingidx][2] * 2
                 };
-                PathfindNode& neighbor = GetNode(neighborCoordinate);
+                PathfindNode *neighbor = &GetNode(neighborCoordinate);
                 auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
                 
                 int down  =0;
                 while (!isOnGround(neighborState) && neighborCoordinate.y > minY - 5) {
                     neighborCoordinate.y -= 1;
-                    neighbor = GetNode(neighborCoordinate.x, neighborCoordinate.y, neighborCoordinate.z);
-                    neighborState = request.octNodeWorld.getOctNode(neighborCoordinate.x, neighborCoordinate.y, neighborCoordinate.z).data;
+                    neighbor = &GetNode(neighborCoordinate);
+                    neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
                     down ++;
                 }
                 if (neighborCoordinate.y <= minY - 5) continue;
@@ -236,13 +240,13 @@ void Pathfinder::Populate() {
     
                 if (!isBlocked(neighborState) && 5 < down && down < 30) {
                     double gScore = n.gScore+ 20 + sqrt(down*down + 16);
-                    if (gScore < neighbor.gScore) {
-                        neighbor.parent = coord;
-                        neighbor.stonkLen = 0;
-                        neighbor.type = ConnectionType_ENDERPEARL;
-                        neighbor.gScore= gScore;
+                    if (gScore < neighbor->gScore) {
+                        neighbor->parent = coord;
+                        neighbor->stonkLen = 0;
+                        neighbor->type = ConnectionType_ENDERPEARL;
+                        neighbor->gScore= gScore;
 
-                        pq.emplace(neighbor.gScore, neighborCoordinate);
+                        pq.emplace(neighbor->gScore, neighborCoordinate);
                     }
                 }
             }
@@ -257,9 +261,9 @@ void Pathfinder::Populate() {
                 Coordinate neighborCoordinate = {
                         coord.x + FACINGS[facingidx][0], coord.y + (facingidx == 3 ? 2 : 1) * FACINGS[facingidx][1], coord.z + FACINGS[facingidx][2]
                 };
-                PathfindNode& neighbor = GetNode(neighborCoordinate);
+                PathfindNode *neighbor = &GetNode(neighborCoordinate);
                 auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
-                
+
                 if (!isCanGo(neighborState) && (isOnGround(neighborState) || facingidx != 2)) {
                     continue; // obv, it's forbidden.
                 }
@@ -303,23 +307,23 @@ void Pathfinder::Populate() {
                     gScore += 2;
                 }
 
-                if (gScore < neighbor.gScore) {
-                    neighbor.parent = coord;
+                if (gScore < neighbor->gScore) {
+                    neighbor->parent = coord;
                     if (isBlocked(neighborState))
-                        neighbor.stonkLen = (n.stonkLen + (facingidx == 3 ? 2 : 1));
+                        neighbor->stonkLen = (n.stonkLen + (facingidx == 3 ? 2 : 1));
                     else
-                        neighbor.stonkLen = 0;
+                        neighbor->stonkLen = 0;
                     if (neighborState == COLLISION_STATE_ENDERCHEST)
-                        neighbor.type = ConnectionType_ECHEST;
+                        neighbor->type = ConnectionType_ECHEST;
                     else if (neighborState == COLLISION_STATE_STAIR)
-                        neighbor.type = ConnectionType_DIG_DOWN;
+                        neighbor->type = ConnectionType_DIG_DOWN;
                     else if (elligibleForTntPearl)
-                        neighbor.type = ConnectionType_TNTPEARL;
+                        neighbor->type = ConnectionType_TNTPEARL;
                     else
-                        neighbor.type = ConnectionType_STONK_WALK;
-                    neighbor.gScore= gScore;
+                        neighbor->type = ConnectionType_STONK_WALK;
+                    neighbor->gScore= gScore;
 
-                    pq.emplace(neighbor.gScore, neighborCoordinate);
+                    pq.emplace(neighbor->gScore, neighborCoordinate);
                 }
             }
         } else {
@@ -327,7 +331,7 @@ void Pathfinder::Populate() {
                 Coordinate neighborCoordinate = {
                         coord.x + FACINGS[facingidx][0], coord.y + FACINGS[facingidx][1], coord.z + FACINGS[facingidx][2]
                 };
-                PathfindNode& neighbor = GetNode(neighborCoordinate);
+                PathfindNode *neighbor = &GetNode(neighborCoordinate);
                 auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
 
                 if (!isCanGo(neighborState)) {
@@ -337,7 +341,7 @@ void Pathfinder::Populate() {
                 if (isBlocked(neighborState) && !isOnGround(neighborState) && facingidx == 3) {
                     updist++;
                     neighborCoordinate.y -= 1;
-                    neighbor =GetNode(neighborCoordinate );
+                    neighbor = &GetNode(neighborCoordinate );
                     neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
 
 
@@ -354,22 +358,22 @@ void Pathfinder::Populate() {
                                           (neighborState != COLLISION_STATE_SUPERBOOMABLE_AIR && neighborState != COLLISION_STATE_SUPERBOOMABLE_GROUND);
 
                 double gScore = n.gScore+ (superboomthingy ? 10 : isOnGround(neighborState) || facingidx == 2 ? 1 : 2 * (updist + 1));
-                if (gScore < neighbor.gScore) {
-                    neighbor.parent = coord;
+                if (gScore < neighbor->gScore) {
+                    neighbor->parent = coord;
                     if (isBlocked(neighborState))
-                        neighbor.stonkLen = (n.stonkLen + 1 + updist);
+                        neighbor->stonkLen = (n.stonkLen + 1 + updist);
                     else
-                        neighbor.stonkLen = 0;
+                        neighbor->stonkLen = 0;
 
                     if (superboomthingy)
-                        neighbor.type = ConnectionType_SUPERBOOM;
+                        neighbor->type = ConnectionType_SUPERBOOM;
                     else if (isBlocked(neighborState))
-                        neighbor.type = ConnectionType_STONK_EXIT;
+                        neighbor->type = ConnectionType_STONK_EXIT;
                     else
-                        neighbor.type = ConnectionType_WALK;
-                    neighbor.gScore= gScore;
+                        neighbor->type = ConnectionType_WALK;
+                    neighbor->gScore= gScore;
 
-                    pq.emplace(neighbor.gScore, neighborCoordinate);
+                    pq.emplace(neighbor->gScore, neighborCoordinate);
                 }
             }
         }
@@ -413,10 +417,10 @@ int TRANSFORM_MATRICES[24][9] = {
 
 };
 
-void Pathfinder::ShadowCast(uint32_t centerX, uint32_t centerY, uint32_t centerZ, uint32_t startZ, double startSlopeX,
-                            double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius, uint8_t trMatrix11,
-                            uint8_t trMatrix21, uint8_t trMatrix31, uint8_t trMatrix12, uint8_t trMatrix22,
-                            uint8_t trMatrix32, uint8_t trMatrix13, uint8_t trMatrix23, uint8_t trMatrix33,
+void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
+                            double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius, int8_t trMatrix11,
+                            int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
+                            int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
                             vector<Coordinate> &result) {
     if (startZ > radius) return;
     // boom. radius is manhatten radius. lol.
@@ -451,24 +455,26 @@ void Pathfinder::ShadowCast(uint32_t centerX, uint32_t centerY, uint32_t centerZ
             result.push_back(Coordinate{static_cast<int32_t>(trX), static_cast<int32_t>(trY), static_cast<int32_t>(trZ)});
         }
     }
-    std::set<int> xEdge;
-    std::set<int> yEdge;
+    bool yEdges[yLen];
+    bool xEdges[xLen];
     for (int y = 0; y < yLen ; y++) {
         for (int x = 0; x < xLen; x++) {
             if (y < yLen -1 && blockMap[y][x] != blockMap[y+1][x])
-                yEdge.insert(y);
+                yEdges[y] = true;
             if (x < xLen - 1 && blockMap[y][x] != blockMap[y][x+1])
-                xEdge.insert(x);
+                xEdges[x] = true;
         }
     }
-    yEdge.insert(yLen -1);
-    xEdge.insert(xLen - 1);
+    yEdges[yLen - 1] = true;
+    xEdges[xLen - 1] = true;
 
 
     int prevY = -1;
-    for (int y : yEdge) {
+    for (int y = 0; y < yLen; y++) {
+        if (!yEdges[y]) continue;
         int prevX = -1;
-        for (int x : xEdge) {
+        for (int x = 0; x < xLen; x++) {
+            if (!xEdges[x]) continue;
             if (!blockMap[y][x]) {
 
                 bool yGood = prevY != -1 && !blockMap[prevY][x];
@@ -534,7 +540,7 @@ void Pathfinder::ShadowCast(uint32_t centerX, uint32_t centerY, uint32_t centerZ
     }
 }
 
-std::vector<Coordinate> Pathfinder::RealShadowCast(Coordinate start, uint32_t radius) {
+std::vector<Coordinate> Pathfinder::RealShadowCast(Coordinate start, int radius) {
     std::vector<Coordinate> result;
     for (auto & i : TRANSFORM_MATRICES) {
         ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,

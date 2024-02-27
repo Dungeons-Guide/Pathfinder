@@ -54,12 +54,37 @@ int main(int argc, char **argv) {
     std::cout << "Elapsed(ms)=" << since(start).count() << std::endl;
 
     long cnt = 0;
-    for (const auto &item: pathfinder.nodes) {
-        for (const auto &item2: item) {
-            for (const auto &item3: item2) {
+    int x = -6;
+    for (auto &item: pathfinder.nodes) {
+        x++;
+        int z = -6;
+        for (auto &item2: item) {
+            z++;
+            int y = pathfinder.minY-6;
+            for (auto &item3: item2) {
+                y++;
                 if (item3.gScore < 9999999) {
                     cnt++;
                 }
+
+//                if (item3.type != ConnectionType_UNPOPULATED) {
+//                    // check cycle.
+//
+//                    PathfindNode *slowPtr = &item3;
+//                    PathfindNode *fastPtr = &item3;
+//                    do {
+//                        if (slowPtr->type != ConnectionType_TARGET)
+//                            slowPtr = &pathfinder.GetNode(slowPtr ->parent);
+//                        if (fastPtr->type != ConnectionType_TARGET)
+//                            fastPtr = &pathfinder.GetNode(fastPtr -> parent);
+//                        if (fastPtr->type != ConnectionType_TARGET)
+//                            fastPtr = &pathfinder.GetNode(fastPtr -> parent);
+//                    } while (fastPtr != slowPtr && fastPtr->type != ConnectionType_TARGET);
+//                    if (fastPtr -> type != ConnectionType_TARGET) {
+//                        std::cout << "Cycle detected at "<<x<<" "<<y<<" "<<z << std::endl;
+//                    }
+//                }
+
             }
         }
     }

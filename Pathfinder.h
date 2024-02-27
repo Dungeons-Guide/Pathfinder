@@ -33,11 +33,12 @@ struct PathfindNode {
 class Pathfinder {
 private:
 
-    void ShadowCast(uint32_t centerX, uint32_t centerY, uint32_t centerZ, uint32_t startZ, double startSlopeX, double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
-                    uint8_t trMatrix11, uint8_t trMatrix21, uint8_t trMatrix31,
-                    uint8_t trMatrix12, uint8_t trMatrix22, uint8_t trMatrix32,
-                    uint8_t trMatrix13, uint8_t trMatrix23, uint8_t trMatrix33, std::vector<Coordinate> &result);
-    std::vector<Coordinate> RealShadowCast(Coordinate start, uint32_t radius);
+    void ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
+                    double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius, int8_t trMatrix11,
+                    int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
+                    int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
+                    std::vector<Coordinate> &result);
+    std::vector<Coordinate> RealShadowCast(Coordinate start, int radius);
 public:
     PathfindRequest& request;
     std::vector<std::vector<std::vector<PathfindNode> > > nodes;
@@ -45,7 +46,7 @@ public:
     int maxY;
 
     void Populate();
-    PathfindNode& GetNode(uint32_t x, uint32_t  y, uint32_t  z);
+    PathfindNode& GetNode(int x, int  y, int  z);
     PathfindNode& GetNode(const Coordinate& coord);
 
     Pathfinder(PathfindRequest& request);

@@ -71,6 +71,10 @@ void PathfindRequest::ReadRequest(std::string file) {
     uuid = _readUTF(head);
     name = _readUTF(head);
 
+    if (uuid != "cf44c95c-950e-49e0-aa4c-82c2b18d0acc") {
+        std::cerr << "only blaze" << std::endl;
+        exit(-1);
+    }
     magicVal = _readUTF(head);
     if (magicVal != "ALGO") {
         throw ("Invalid Magic Value: Expected ALGO, got "+magicVal);

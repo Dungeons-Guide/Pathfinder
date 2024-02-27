@@ -25,15 +25,28 @@ void PathfindResult::Init(Pathfinder &pathfinder) {
         for (int z = 0; z < resultZLen; z++) {
             for (int x = 0; x < resultXLen; x++) {
                 auto node = pathfinder.GetNode(x,y + pathfinder.minY,z);
-                this->results[y * resultXLen * resultZLen + z * resultXLen + x] = {
-                        ResultCoordinate {
-                            (uint8_t) node.parent.x,
-                            (uint8_t) node.parent.y,
-                            (uint8_t) node.parent.z
-                        },
-                        (float) node.gScore,
-                        node.type
-                };
+                if (node.parent.x < resultXStart || node.parent.x >= resultXStart + resultXLen ||
+                    node.parent.y < resultYStart || node.parent.y >= resultYStart + resultYLen ||
+                    node.parent.z < resultZStart || node.parent.z >= resultZStart + resultZLen) {
+                    this->results[y * resultXLen * resultZLen + z * resultXLen + x] = {
+                            ResultCoordinate {
+                                    0,0,0
+                            },
+                            std::numeric_limits<float>::max(),
+                            ConnectionType_UNPOPULATED
+                    };
+                } else {
+                    this->results[y * resultXLen * resultZLen + z * resultXLen + x] = {
+                            ResultCoordinate {
+                                    (uint8_t) (node.parent.x - resultXStart),
+                                    (uint8_t) (node.parent.y - resultYStart),
+                                    (uint8_t) (node.parent.z - resultZStart)
+                            },
+                            (float) node.gScore,
+                            node.type
+                    };
+                }
+
             }
         }
     }

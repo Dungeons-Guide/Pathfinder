@@ -38,10 +38,11 @@ private:
                     int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
                     int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
                     std::vector<Coordinate> &result);
-    std::vector<Coordinate> RealShadowCast(Coordinate start, int radius);
+    void RealShadowCast(std::vector<Coordinate>&, Coordinate start, int radius);
 public:
     PathfindRequest& request;
     std::vector<std::vector<std::vector<PathfindNode> > > nodes;
+    std::vector<std::vector<std::vector<std::vector<Coordinate>>>> etherwarps;
     int minY;
     int maxY;
 

@@ -127,7 +127,8 @@ void Pathfinder::Populate() {
                                               (coord.z-1) / 2};
 
                 // shadow casting~
-                std::vector<Coordinate> shadowcastRes = RealShadowCast(start, 61);
+                std::vector<Coordinate> shadowcastRes;
+                RealShadowCast(shadowcastRes, start, 61);
                 int cnt = 0;
                 for (Coordinate target : shadowcastRes) {
                     if (_distSq(target.x - start.x, target.y - start.y, target.z - start.z) >61 * 61) continue;
@@ -540,16 +541,14 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
     }
 }
 
-std::vector<Coordinate> Pathfinder::RealShadowCast(Coordinate start, int radius) {
-    std::vector<Coordinate> result;
-    for (auto & i : TRANSFORM_MATRICES) {
-        ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                   i[0] ,i[1],i[2],
-                   i[3], i[4], i[5],
-                   i[6],i[7], i[8], result
-        );
-    }
-    return result;
+void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate start, int radius) {
+        for (auto & i : TRANSFORM_MATRICES) {
+            ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                       i[0] ,i[1],i[2],
+                       i[3], i[4], i[5],
+                       i[6],i[7], i[8], result
+            );
+        }
 }
 
 Pathfinder::Pathfinder(PathfindRequest& req): request(req) {

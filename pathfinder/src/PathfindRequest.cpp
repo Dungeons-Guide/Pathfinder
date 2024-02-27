@@ -117,7 +117,7 @@ void PathfindRequest::ReadRequest(std::istream& infile) {
     octNodeWorld.xLen = _readInt(head);
     octNodeWorld.zLen = _readInt(head);
     octNodeWorld.yLen = _readInt(head);
-    octNodeWorld.nodes.resize(blockWorld.xLen * blockWorld.yLen * blockWorld.zLen);
+    octNodeWorld.nodes.resize(octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen);
     std::transform(head,  head += (octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen), octNodeWorld.nodes.begin(), _convert_octnode );
 }
 

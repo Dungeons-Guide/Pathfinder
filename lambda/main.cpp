@@ -54,14 +54,18 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     }
 
     auto v = json.View();
-
-    if (!v.ValueExists("s3bucket") || !v.ValueExists("s3key") || !v.GetObject("s3bucket").IsString() ||
-        !v.GetObject("s3key").IsString()) {
-        return invocation_response::failure("Missing input value s3bucket or s3key", "InvalidJSON");
+    if (!v.ValueExists("s3") || !v.GetObject("s3").IsObject()) {
+        return invocation_response::failure("Missing event value s3", "InvalidJSON");
     }
-
-    auto bucket = v.GetString("s3bucket");
-    auto key = v.GetString("s3key");
+    auto s3Data = v.GetObject("s3");
+    if (!s3Data.ValueExists("bucket") || !v.GetObject("bucket").IsObject() || !v.GetObject("bucket").GetObject("name").IsString()) {
+        return invocation_response::failure("Missing event value s3.bucket.name", "InvalidJSON");
+    }
+    auto bucket = v.GetObject("bucket").GetString("name");
+    if (!s3Data.ValueExists("object") || !v.GetObject("object").IsObject() || !v.GetObject("object").GetObject("key").IsString()) {
+        return invocation_response::failure("Missing event value s3.object.key", "InvalidJSON");
+    }
+    auto key = v.GetObject("object").GetString("key");
 
     AWS_LOGSTREAM_INFO(TAG, "Attempting to download file from s3://" << bucket << "/" << key);
 

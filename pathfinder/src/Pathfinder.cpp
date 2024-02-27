@@ -451,8 +451,8 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
 
             double currentSlopeX = x / realZ;
 
-            if (currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX) continue;
             if (localBlocked) continue;
+            if (currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX) [[unlikely]] continue;
 
 
             result.push_back(Coordinate{static_cast<int32_t>(trX), static_cast<int32_t>(trY), static_cast<int32_t>(trZ)});

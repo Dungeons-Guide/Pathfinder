@@ -2,6 +2,7 @@ requests/**
 results2/**
 results/**
 cmake-build-debug/**
+cmake-build-release/**
 
 .DS_Store
 .idea

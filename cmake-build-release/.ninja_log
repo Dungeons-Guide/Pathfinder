@@ -1,8 +1,0 @@
-# ninja log v5
-0	39	1709049919318055714	pathfinder/CMakeFiles/pathfinder.dir/src/CollisionState.cpp.o	a84f4e36adbc3c54
-1	437	1709049919714451336	cli/CMakeFiles/pathfinder-cli.dir/main.cpp.o	70800f7929fdb67c
-1	500	1709049919776482534	pathfinder/CMakeFiles/pathfinder.dir/src/PathfindRequest.cpp.o	16ae0e9852ea60e0
-1	582	1709049919859957265	pathfinder/CMakeFiles/pathfinder.dir/src/Pathfinder.cpp.o	2aa48679b322db9c
-1	899	1709049920175817304	pathfinder/CMakeFiles/pathfinder.dir/src/PathfindResult.cpp.o	17c51faa5a73c9bb
-900	925	1709049920206174000	pathfinder/libpathfinder.a	79da890dc77a82e9
-925	963	1709049920242735263	cli/pathfinder-cli	8b0ab7d080c2ba43

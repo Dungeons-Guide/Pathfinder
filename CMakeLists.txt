@@ -3,15 +3,15 @@ project(pathfinder2)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(pathfinder2 main.cpp
-            PathfindRequest.cpp
-            PathfindRequest.h
-            Pathfinder.cpp
-            Pathfinder.h
-            CollisionState.h
-            CollisionState.cpp
-            PathfindResult.h
-            PathfindResult.cpp)
+add_executable(pathfinder2 src/main.cpp
+        src/PathfindRequest.cpp
+        src/PathfindRequest.h
+        src/Pathfinder.cpp
+        src/Pathfinder.h
+        src/CollisionState.h
+        src/CollisionState.cpp
+        src/PathfindResult.h
+        src/PathfindResult.cpp)
 
 
 find_package(Boost 1.45.0 REQUIRED COMPONENTS system iostreams)

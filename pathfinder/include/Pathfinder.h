@@ -35,8 +35,9 @@ class Pathfinder {
 private:
 
     void ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
-                    double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius, int8_t trMatrix11,
-                    int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
+                    double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
+                    double xOffset, double yOffset, double zOffset,
+                    int8_t trMatrix11, int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
                     int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
                     std::vector<Coordinate> &result);
     void RealShadowCast(std::vector<Coordinate>&, Coordinate start, int radius);

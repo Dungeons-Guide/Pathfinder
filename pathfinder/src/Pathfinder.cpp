@@ -22,6 +22,7 @@ PathfindNode& Pathfinder::GetNode(const Coordinate& coord) {
 }
 
 bool emptyFor(Block b) {
+    if (b.id == 30) return true; // can't warp on cobweb.
     if (b.id == 0) return true; // air
     if (b.id == 171) return true; // carpet
     if (b.id == 144) return true; // skull
@@ -120,7 +121,7 @@ void Pathfinder::Populate() {
             Block b = request.blockWorld.getBlock((coord.x-1) / 2, coord.y / 2 - 1, (coord.z-1) / 2);
             Block b2 = request.blockWorld.getBlock((coord.x-1) / 2, coord.y / 2, (coord.z-1) / 2);
             Block b3 = request.blockWorld.getBlock((coord.x-1) / 2, coord.y / 2 + 1, (coord.z-1) / 2);
-            if (!emptyFor(b) && emptyFor(b2) && emptyFor(b3)) {
+            if (!emptyFor(b) && emptyFor(b2) && emptyFor(b3) && b.id != 153) {
                 // elligible for etherwarp.
 
                 Coordinate start = Coordinate{(coord.x-1) / 2,
@@ -132,21 +133,20 @@ void Pathfinder::Populate() {
                 RealShadowCast(shadowcastRes, start, 61);
                 int cnt = 0;
                 for (Coordinate target : shadowcastRes) {
-                    if (_distSq(target.x - start.x, target.y - start.y, target.z - start.z) >61 * 61) continue;
-                    if (target.x * 2 + 1 < 2) continue;
-                    if (target.y * 2 - 2 < minY - 5) continue;
-                    if (target.z * 2 + 1 < 2) continue;
-                    if (target.x * 2 + 1 >= request.octNodeWorld.xLen ) continue;
-                    if (target.y * 2 + 1 >= maxY + 5) continue;
-                    if (target.z * 2 + 1 >= request.octNodeWorld.zLen ) continue;
+                    if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) >61 * 61) continue;
+                    if (target.x < 2) continue;
+                    if (target.y -3 < minY - 5) continue;
+                    if (target.z < 2) continue;
+                    if (target.x >= request.octNodeWorld.xLen ) continue;
+                    if (target.y -3 >= maxY + 5) continue;
+                    if (target.z  >= request.octNodeWorld.zLen ) continue;
 
-                    Coordinate neighborCoordinate = {
-                            target.x * 2 + 1,
-                            target.y * 2 - 2,
-                            target.z * 2 + 1
-                    };
-                    PathfindNode *neighbor = &GetNode(neighborCoordinate);
-                    auto neighborState = request.octNodeWorld.getOctNode(neighborCoordinate).data;
+                    target.y -= 3;
+
+                    PathfindNode *neighbor = &GetNode(target);
+                    auto neighborState = request.octNodeWorld.getOctNode(target).data;
+                    if (!isOnGround(neighborState)) continue;
+
                     double gScore = n.gScore+ 20; // don't etherwarp unless it saves like 10 blocks
                     if (gScore < neighbor->gScore) {
                         neighbor->parent = coord;
@@ -154,7 +154,7 @@ void Pathfinder::Populate() {
                         neighbor->type = ConnectionType_ETHERWARP;
                         neighbor->gScore= gScore;
 
-                        pq.emplace(neighbor->gScore, neighborCoordinate);
+                        pq.emplace(neighbor->gScore, target);
                     }
                 }
             }
@@ -420,42 +420,62 @@ int TRANSFORM_MATRICES[24][9] = {
 };
 
 void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
-                            double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius, int8_t trMatrix11,
+                            double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
+                            double xOffset, double yOffset, double zOffset, int8_t trMatrix11,
                             int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
                             int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
                             vector<Coordinate> &result) {
     if (startZ > radius) return;
     shadowcasts++;
     // boom. radius is manhatten radius. lol.
-    double realZ = startZ;
+    double realZ = startZ - zOffset;
 
-    int startY =  max(0, (int) floor(startSlopeY * (realZ - 0.5) - 0.5));
-    int endY = (int) ceil(endSlopeY * (realZ + 0.5) - 0.5);
-    int startX = max(0, (int) floor(startSlopeX * (realZ - 0.5) - 0.5));
-    int endX = (int) ceil(endSlopeX * (realZ + 0.5) - 0.5);
+    int startY =  max(0, (int) floor(startSlopeY * (realZ - 0.5) - 0.5 + yOffset)) - 1;
+    int endY = (int) ceil(endSlopeY * (realZ + 0.5) - 0.5 + yOffset) + 1;
+    int startX = max(0, (int) floor(startSlopeX * (realZ - 0.5) - 0.5 + xOffset)) - 1;
+    int endX = (int) ceil(endSlopeX * (realZ + 0.5) - 0.5 + xOffset) + 1;
     int yLen = endY - startY + 1;
     int xLen = endX - startX + 1;
     bool blockMap[yLen][xLen];
     for (int y = startY; y <= endY; y++) {
-        double currentSlopeY = y / realZ;
         for (int x = startX; x <= endX; x++) {
             int trX = centerX + x * trMatrix11 + y * trMatrix21 + startZ * trMatrix31;
             int trY = centerY + x * trMatrix12 + y * trMatrix22 + startZ * trMatrix32;
             int trZ = centerZ + x * trMatrix13 + y * trMatrix23 + startZ * trMatrix33;
 
             bool localBlocked = request.blockWorld.getBlock(trX, trY, trZ).id != 0 && startZ != 0;
-            if (endSlopeX == 1 && x == endX && blockMap[y - startY][x-1 - startX]) localBlocked = true;
-            if (endSlopeY == 1 && y == endY && blockMap[y-1 - startY][x - startX]) localBlocked = true;
+            if (endSlopeX == 1 && x +1 == endX && blockMap[y - startY][x-1 - startX] && xOffset != 0) localBlocked = true;
+            if (endSlopeY == 1 && y +1 == endY && blockMap[y-1 - startY][x - startX] && yOffset != 0) localBlocked = true;
 
             blockMap[y - startY][x - startX] = localBlocked;
 
-            double currentSlopeX = x / realZ;
+        }
+    }
+    for (int y = startY * 2 + 1; y < endY * 2; y ++) {
+        double currentSlopeY = ((y-yOffset) / 2.0) / (realZ-0.5);
+        double currentSlopeYP = ((y-yOffset) / 2.0) / (realZ);
+        for (int x = startX * 2 + 1; x < endX * 2; x++) {
+            double currentSlopeX = ((x-xOffset) / 2.0) / (realZ-0.5) ;
+            double currentSlopeXP = ((x-xOffset) / 2.0) / (realZ);
 
+            bool localBlocked = blockMap[y/2 - startY][x/2 - startX];
+            if (x%2 != 0) localBlocked &= blockMap[y/2 - startY][x/2 - startX+1];
+            if (y%2 != 0) localBlocked &= blockMap[y/2 - startY +1][x/2 - startX];
+            if (x%2 != 0 && y%2 != 0) localBlocked &= blockMap[y/2 - startY + 1][x/2 - startX+1];
             if (localBlocked) continue;
-            if (currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX) [[unlikely]] continue;
 
-
-            result.push_back(Coordinate{static_cast<int32_t>(trX), static_cast<int32_t>(trY), static_cast<int32_t>(trZ)});
+            if (!(currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX)) {
+                int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2-1 ) * trMatrix31;
+                int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 -1) * trMatrix32;
+                int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2-1) * trMatrix33;
+                result.push_back({trX, trY, trZ});
+            }
+            if (!(currentSlopeYP < startSlopeY || currentSlopeYP > endSlopeY || currentSlopeXP < startSlopeX || currentSlopeXP > endSlopeX)) {
+                int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2 ) * trMatrix31;
+                int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 ) * trMatrix32;
+                int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2 ) * trMatrix33;
+                result.push_back({trX, trY, trZ});
+            }
         }
     }
     bool yEdges[yLen];
@@ -473,69 +493,73 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
 
 
     int prevY = -1;
+    double leeway = 0.25;
     for (int y = 0; y < yLen; y++) {
         if (!yEdges[y]) continue;
         int prevX = -1;
         for (int x = 0; x < xLen; x++) {
             if (!xEdges[x]) continue;
             if (!blockMap[y][x]) {
-
                 bool yGood = prevY != -1 && !blockMap[prevY][x];
                 bool xGood = prevX != -1 && !blockMap[y][prevX];
                 bool diagonalGood = prevY != -1 && prevX != -1 && !blockMap[prevY][prevX];
 
 
                 if (diagonalGood && yGood && xGood) {
-                    double startSlopeYY = max(startSlopeY, (prevY + startY + 0.5) / (realZ + 0.5));
-                    double endSlopeYY = min(endSlopeY, (y + startY + 0.5) / (realZ + 0.5));
-                    double startSlopeXX  = max(startSlopeX, (prevX  + startX+ 0.5) / (realZ + 0.5));
-                    double endSlopeXX = min(endSlopeX, (x + startX + 0.5) / (realZ + 0.5));
+                    double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
+                    double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
+                    double startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5 - leeway) / (realZ + 0.5));
+                    double endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5 - leeway) / (realZ + 0.5));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                   startSlopeYY ,endSlopeYY , radius, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                   startSlopeYY ,endSlopeYY , radius,
+                                   xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
                     }
                 } else if ((xGood && !yGood) || (yGood && !xGood)) {
-                    double startSlopeYY = yGood ? max(startSlopeY, (prevY + startY + 0.5) / (realZ + 0.5)) : max(startSlopeY, (prevY + startY + 0.5) / (realZ - 0.5));
-                    double endSlopeYY = min(endSlopeY, (y + startY + 0.5) / (realZ + 0.5));
-                    double startSlopeXX  = xGood ? max(startSlopeX, (prevX  + startX+ 0.5) / (realZ + 0.5)) : max(startSlopeX, (prevX  + startX+ 0.5) / (realZ - 0.5));
-                    double endSlopeXX = min(endSlopeX, (x + startX + 0.5) / (realZ + 0.5));
+                    double startSlopeYY = yGood ? max(startSlopeY, (prevY + startY - yOffset +0.5 - leeway) / (realZ + 0.5)) : max(startSlopeY, (prevY + startY - yOffset +0.5 + leeway) / (realZ - 0.5));
+                    double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
+                    double startSlopeXX  = xGood ? max(startSlopeX, (prevX  + startX - xOffset+0.5 - leeway) / (realZ + 0.5)) : max(startSlopeX, (prevX  + startX - xOffset+ 0.5 + leeway) / (realZ - 0.5));
+                    double endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5 - leeway) / (realZ + 0.5));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                   startSlopeYY ,endSlopeYY , radius, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                   startSlopeYY ,endSlopeYY , radius,
+                                   xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
                     }
                 } else if (!diagonalGood && yGood && xGood) {
                     {
-                        double startSlopeYY = max(startSlopeY, (prevY + startY + 0.5) / (realZ - 0.5));
-                        double endSlopeYY = min(endSlopeY, (y + startY + 0.5) / (realZ + 0.5));
-                        double startSlopeXX = max(startSlopeX, (prevX + startX + 0.5) / (realZ + 0.5));
-                        double endSlopeXX = min(endSlopeX, (x + startX + 0.5) / (realZ + 0.5));
+                        double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5 + leeway) / (realZ - 0.5));
+                        double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
+                        double startSlopeXX = max(startSlopeX, (prevX + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
+                        double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                         if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                             ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                       startSlopeYY, endSlopeYY, radius, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                       startSlopeYY, endSlopeYY, radius,
+                                       xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
                         }
                     }
                     {
-                        double startSlopeYY = max(startSlopeY, (prevY + startY + 0.5) / (realZ + 0.5));
-                        double endSlopeYY = min(endSlopeY, (prevY + startY + 0.5) / (realZ - 0.5));
-                        double startSlopeXX  =  max(startSlopeX, (prevX  + startX+ 0.5) / (realZ - 0.5));
-                        double endSlopeXX = min(endSlopeX, (x + startX + 0.5) / (realZ + 0.5));
+                        double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5 - leeway) / (realZ + 0.5));
+                        double endSlopeYY = min(endSlopeY, (prevY + startY - yOffset + 0.5 + leeway) / (realZ - 0.5));
+                        double startSlopeXX  =  max(startSlopeX, (prevX  + startX - xOffset+0.5 + leeway) / (realZ - 0.5));
+                        double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                         if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                             ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                       startSlopeYY ,endSlopeYY , radius, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                       startSlopeYY ,endSlopeYY , radius,
+                                       xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
                         }
                     }
                 } else {
-                    double startSlopeYY = max(startSlopeY, (prevY + startY + 0.5) / (realZ - 0.5));
-                    double endSlopeYY = min(endSlopeY, (y + startY + 0.5) / (realZ + 0.5));
-                    double startSlopeXX  = max(startSlopeX, (prevX  + startX+ 0.5) / (realZ - 0.5));
-                    double endSlopeXX = min(endSlopeX, (x + startX + 0.5) / (realZ + 0.5));
+                    double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5 + leeway) / (realZ - 0.5));
+                    double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
+                    double startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5 + leeway) / (realZ - 0.5));
+                    double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                   startSlopeYY ,endSlopeYY , radius, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                   startSlopeYY ,endSlopeYY , radius,
+                                   xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
                     }
                     // normal case
                 }
-
             }
             prevX = x;
         }
@@ -546,6 +570,19 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
 void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate start, int radius) {
         for (auto & i : TRANSFORM_MATRICES) {
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                       0.4, 0, 0,
+                       i[0] ,i[1],i[2],
+                       i[3], i[4], i[5],
+                       i[6],i[7], i[8], result
+            );
+            ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                       0, 0.4, 0,
+                       i[0] ,i[1],i[2],
+                       i[3], i[4], i[5],
+                       i[6],i[7], i[8], result
+            );
+            ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                       0, 0, 0.4,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
                        i[6],i[7], i[8], result

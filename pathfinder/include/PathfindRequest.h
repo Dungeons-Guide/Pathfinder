@@ -31,9 +31,9 @@ enum PearlLandState:  uint8_t {
 };
 
 struct Coordinate {
-    int32_t x;
-    int32_t y;
-    int32_t z;
+    int x;
+    int y;
+    int z;
     bool operator>(const Coordinate& other) const {
         return x > other.x || (x == other.x && y > other.y) || (x == other.x && y == other.y && z > other.z);
     }
@@ -55,11 +55,11 @@ typedef struct {
 } Block;
 
 struct BlockWorld {
-    uint32_t xLen;
-    uint32_t zLen;
-    uint32_t yLen;
+    int xLen;
+    int zLen;
+    int yLen;
     std::vector<Block> blocks;
-    Block getBlock(int32_t x, int32_t  y, int32_t  z) {
+    Block getBlock(int x, int y, int z) {
         if (x < 0 || y < 0 || z < 0) return {  7, 0 };
         if (x >= xLen || z >= zLen || y >= yLen)  return { 7 ,0 };
 
@@ -74,12 +74,12 @@ struct BlockWorld {
 };
 
 struct OctNodeWorld {
-    uint32_t xLen;
-    uint32_t zLen;
-    uint32_t yLen;
+    int xLen;
+    int zLen;
+    int yLen;
     std::vector<OctNode> nodes;
 
-    OctNode getOctNode(int32_t  x, int32_t  y, int32_t  z) {
+    OctNode getOctNode(int  x, int  y, int  z) {
         if (x < 0 || y < 0 || z < 0) return { false, PEARL_LAND_STATE_BLOCKED, COLLISION_STATE_BLOCKED };
         if (x >= xLen || z >= zLen || y >= yLen)  return { false, PEARL_LAND_STATE_BLOCKED, COLLISION_STATE_BLOCKED };
 

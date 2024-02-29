@@ -72,6 +72,8 @@ void Pathfinder::Populate() {
         node.gScore = 0.0;
         node.type = ConnectionType_TARGET;
     }
+    std::vector<Coordinate> shadowcastRes;
+    shadowcastRes.reserve(100000);
 
     while (!pq.empty()) {
         // explore.
@@ -128,8 +130,8 @@ void Pathfinder::Populate() {
                                               coord.y / 2 - 1,
                                               (coord.z-1) / 2};
 
+                shadowcastRes.clear();
                 // shadow casting~
-                std::vector<Coordinate> shadowcastRes;
                 RealShadowCast(shadowcastRes, start, 61);
                 int cnt = 0;
                 for (Coordinate target : shadowcastRes) {
@@ -258,7 +260,7 @@ void Pathfinder::Populate() {
 //        if (isCanGo(originNodeState)) {
         if (isBlocked(originNodeState)) {
             // in wall
-            bool ontop = request.octNodeWorld.getOctNode(coord.x, coord.y + 1, coord.z).data == COLLISION_STATE_ONGROUND;
+//            bool ontop = request.octNodeWorld.getOctNode(coord.x, coord.y + 1, coord.z).data == COLLISION_STATE_ONGROUND;
             for (int facingidx = 0; facingidx < 6; facingidx++) {
                 Coordinate neighborCoordinate = {
                         coord.x + FACINGS[facingidx][0], coord.y + (facingidx == 3 ? 2 : 1) * FACINGS[facingidx][1], coord.z + FACINGS[facingidx][2]
@@ -421,9 +423,9 @@ int TRANSFORM_MATRICES[24][9] = {
 
 void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
                             double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
-                            double xOffset, double yOffset, double zOffset, int8_t trMatrix11,
-                            int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
-                            int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
+                            double xOffset, double yOffset, double zOffset, int trMatrix11,
+                            int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
+                            int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
                             vector<Coordinate> &result) {
     if (startZ > radius) return;
     shadowcasts++;
@@ -464,13 +466,13 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
             if (x%2 != 0 && y%2 != 0) localBlocked &= blockMap[y/2 - startY + 1][x/2 - startX+1];
             if (localBlocked) continue;
 
-            if (!(currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX)) {
+            if (!(currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX)) [[likely]] {
                 int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2-1 ) * trMatrix31;
                 int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 -1) * trMatrix32;
                 int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2-1) * trMatrix33;
                 result.push_back({trX, trY, trZ});
             }
-            if (!(currentSlopeYP < startSlopeY || currentSlopeYP > endSlopeY || currentSlopeXP < startSlopeX || currentSlopeXP > endSlopeX)) {
+            if (!(currentSlopeYP < startSlopeY || currentSlopeYP > endSlopeY || currentSlopeXP < startSlopeX || currentSlopeXP > endSlopeX)) [[likely]]  {
                 int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2 ) * trMatrix31;
                 int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 ) * trMatrix32;
                 int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2 ) * trMatrix33;
@@ -495,10 +497,10 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
     int prevY = -1;
     double leeway = 0.25;
     for (int y = 0; y < yLen; y++) {
-        if (!yEdges[y]) continue;
+        if (!yEdges[y]) [[likely]] continue;
         int prevX = -1;
         for (int x = 0; x < xLen; x++) {
-            if (!xEdges[x]) continue;
+            if (!xEdges[x]) [[likely]] continue;
             if (!blockMap[y][x]) {
                 bool yGood = prevY != -1 && !blockMap[prevY][x];
                 bool xGood = prevX != -1 && !blockMap[y][prevX];
@@ -511,6 +513,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                     double startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5 - leeway) / (realZ + 0.5));
                     double endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5 - leeway) / (realZ + 0.5));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
+                        [[likely]]
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                    startSlopeYY ,endSlopeYY , radius,
                                    xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
@@ -521,6 +524,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                     double startSlopeXX  = xGood ? max(startSlopeX, (prevX  + startX - xOffset+0.5 - leeway) / (realZ + 0.5)) : max(startSlopeX, (prevX  + startX - xOffset+ 0.5 + leeway) / (realZ - 0.5));
                     double endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5 - leeway) / (realZ + 0.5));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
+                        [[likely]]
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                    startSlopeYY ,endSlopeYY , radius,
                                    xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
@@ -532,6 +536,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                         double startSlopeXX = max(startSlopeX, (prevX + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                         double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                         if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
+                            [[likely]]
                             ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                        startSlopeYY, endSlopeYY, radius,
                                        xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
@@ -543,6 +548,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                         double startSlopeXX  =  max(startSlopeX, (prevX  + startX - xOffset+0.5 + leeway) / (realZ - 0.5));
                         double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                         if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
+                            [[likely]]
                             ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                        startSlopeYY ,endSlopeYY , radius,
                                        xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
@@ -554,6 +560,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                     double startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5 + leeway) / (realZ - 0.5));
                     double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
+                        [[likely]]
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                    startSlopeYY ,endSlopeYY , radius,
                                    xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);

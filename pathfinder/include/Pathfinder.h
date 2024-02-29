@@ -37,8 +37,8 @@ private:
     void ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
                     double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
                     double xOffset, double yOffset, double zOffset,
-                    int8_t trMatrix11, int8_t  trMatrix21, int8_t  trMatrix31, int8_t  trMatrix12, int8_t  trMatrix22,
-                    int8_t  trMatrix32, int8_t  trMatrix13, int8_t  trMatrix23, int8_t  trMatrix33,
+                    int trMatrix11, int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
+                    int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
                     std::vector<Coordinate> &result);
     void RealShadowCast(std::vector<Coordinate>&, Coordinate start, int radius);
 public:
@@ -47,7 +47,7 @@ public:
     std::vector<std::vector<std::vector<std::vector<Coordinate>>>> etherwarps;
     int minY;
     int maxY;
-    long shadowcasts;
+    int shadowcasts;
 
     void Populate();
     PathfindNode& GetNode(int x, int  y, int  z);

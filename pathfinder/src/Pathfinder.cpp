@@ -454,11 +454,11 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
         }
     }
     for (int y = startY * 2 + 1; y < endY * 2; y ++) {
-        float currentSlopeY = ((y-yOffset) / 2.0) / (realZ-0.5);
-        float currentSlopeYP = ((y-yOffset) / 2.0) / (realZ);
+        float currentSlopeY = ((y-yOffset) / 2.0f) / (realZ-0.5f);
+        float currentSlopeYP = ((y-yOffset) / 2.0f) / (realZ);
         for (int x = startX * 2 + 1; x < endX * 2; x++) {
-            float currentSlopeX = ((x-xOffset) / 2.0) / (realZ-0.5) ;
-            float currentSlopeXP = ((x-xOffset) / 2.0) / (realZ);
+            float currentSlopeX = ((x-xOffset) / 2.0f) / (realZ-0.5f) ;
+            float currentSlopeXP = ((x-xOffset) / 2.0f) / (realZ);
 
             bool localBlocked = blockMap[y/2 - startY][x/2 - startX];
             if (x%2 != 0) localBlocked &= blockMap[y/2 - startY][x/2 - startX+1];
@@ -486,8 +486,12 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
         for (int x = 0; x < xLen; x++) {
             if (y < yLen -1 && blockMap[y][x] != blockMap[y+1][x])
                 yEdges[y] = true;
+            else
+                yEdges[y] = false;
             if (x < xLen - 1 && blockMap[y][x] != blockMap[y][x+1])
                 xEdges[x] = true;
+            else
+                xEdges[x] = false;
         }
     }
     yEdges[yLen - 1] = true;
@@ -575,7 +579,6 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
 }
 
 void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate start, int radius) {
-    std::cout << "Shadow casting on " << start.x << " / "<<start.y << " / " <<start.z << " ";
         for (auto & i : TRANSFORM_MATRICES) {
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
                        0.4, 0, 0,
@@ -596,7 +599,6 @@ void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate star
                        i[6],i[7], i[8], result
             );
         }
-        std::cout << result.size() << "Nodes open" << std::endl;
 }
 
 Pathfinder::Pathfinder(PathfindRequest& req): request(req) {

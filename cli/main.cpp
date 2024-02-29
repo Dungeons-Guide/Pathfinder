@@ -50,6 +50,8 @@ int main(int argc, char **argv) {
     std::cout << "ID: " << request.uuid << " NAME: " << request.name << std::endl;
     std::cout << "PF ID: " << request.id << std::endl;
     std::cout << "Target Cnt: "<< request.target.size() << " World Size: " << request.blockWorld.xLen * request.blockWorld.yLen * request.blockWorld.zLen << std::endl;
+    std::cout << "Etherwarp settings: " << request.settings.etherwarpRadius << " leeway " << request.settings.etherwarpLeeway << " offset "<<request.settings.etherwarpOffset << std::endl;
+
 
     auto start = std::chrono::steady_clock::now();
 
@@ -57,6 +59,7 @@ int main(int argc, char **argv) {
     pathfinder.Populate();
 
     std::cout << "Elapsed(ms)=" << since(start).count() << std::endl;
+
 
     long cnt = 0;
     int x = -6;

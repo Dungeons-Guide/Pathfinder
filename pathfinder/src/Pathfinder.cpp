@@ -133,7 +133,7 @@ void Pathfinder::Populate() {
                 shadowcastRes.clear();
                 // shadow casting~
                 RealShadowCast(shadowcastRes, start, request.settings.etherwarpRadius);
-                for (Coordinate target : shadowcastRes) {
+                for (Coordinate& target : shadowcastRes) {
                     if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) >61 * 61) continue;
                     if (target.x < 2) continue;
                     if (target.y -3 < minY - 5) continue;
@@ -481,16 +481,15 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
     }
     bool yEdges[yLen];
     bool xEdges[xLen];
+    for (int y = 0; y < yLen;y ++) yEdges[y] = false;
+    for (int x = 0; x < xLen; x++) xEdges[x] = false;
+
     for (int y = 0; y < yLen ; y++) {
         for (int x = 0; x < xLen; x++) {
             if (y < yLen -1 && blockMap[y][x] != blockMap[y+1][x])
                 yEdges[y] = true;
-            else
-                yEdges[y] = false;
             if (x < xLen - 1 && blockMap[y][x] != blockMap[y][x+1])
                 xEdges[x] = true;
-            else
-                xEdges[x] = false;
         }
     }
     yEdges[yLen - 1] = true;

@@ -40,7 +40,6 @@ private:
                     int trMatrix11, int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
                     int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
                     std::vector<Coordinate> &result);
-    void RealShadowCast(std::vector<Coordinate>&, Coordinate start, int radius);
 public:
     PathfindRequest& request;
     std::vector<std::vector<std::vector<PathfindNode> > > nodes;
@@ -53,6 +52,7 @@ public:
     PathfindNode& GetNode(int x, int  y, int  z);
     PathfindNode& GetNode(const Coordinate& coord);
 
+    void RealShadowCast(std::vector<Coordinate>&, Coordinate start, int radius);
     Pathfinder(PathfindRequest& request);
 };
 

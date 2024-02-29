@@ -35,7 +35,7 @@ class Pathfinder {
 private:
 
     void ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX,
-                    float endSlopeX, float startSlopeY, float endSlopeY, uint32_t radius,
+                    float endSlopeX, float startSlopeY, float endSlopeY, int radius,
                     float xOffset, float yOffset, float zOffset,
                     int trMatrix11, int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
                     int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,

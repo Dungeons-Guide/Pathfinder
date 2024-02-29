@@ -133,7 +133,6 @@ void Pathfinder::Populate() {
                 shadowcastRes.clear();
                 // shadow casting~
                 RealShadowCast(shadowcastRes, start, 61);
-                int cnt = 0;
                 for (Coordinate target : shadowcastRes) {
                     if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) >61 * 61) continue;
                     if (target.x < 2) continue;
@@ -422,7 +421,7 @@ int TRANSFORM_MATRICES[24][9] = {
 };
 
 void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX,
-                            float endSlopeX, float startSlopeY, float endSlopeY, uint32_t radius,
+                            float endSlopeX, float startSlopeY, float endSlopeY, int  radius,
                             float xOffset, float yOffset, float zOffset, int trMatrix11,
                             int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
                             int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,

@@ -6,3 +6,5 @@ cmake-build-release/**
 
 .DS_Store
 .idea
+
+pathfind-request-processor.zip

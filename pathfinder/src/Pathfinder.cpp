@@ -134,7 +134,7 @@ void Pathfinder::Populate() {
                 // shadow casting~
                 RealShadowCast(shadowcastRes, start, request.settings.etherwarpRadius);
                 for (Coordinate& target : shadowcastRes) {
-                    if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) >61 * 61) continue;
+                    if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) > request.settings.etherwarpRadius * request.settings.etherwarpRadius * 4) continue;
                     if (target.x < 2) continue;
                     if (target.y -3 < minY - 5) continue;
                     if (target.z < 2) continue;

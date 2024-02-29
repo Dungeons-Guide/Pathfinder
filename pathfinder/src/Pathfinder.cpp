@@ -132,7 +132,7 @@ void Pathfinder::Populate() {
 
                 shadowcastRes.clear();
                 // shadow casting~
-                RealShadowCast(shadowcastRes, start, 61);
+                RealShadowCast(shadowcastRes, start, request.settings.etherwarpRadius);
                 for (Coordinate target : shadowcastRes) {
                     if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) >61 * 61) continue;
                     if (target.x < 2) continue;
@@ -445,8 +445,8 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
             int trZ = centerZ + x * trMatrix13 + y * trMatrix23 + startZ * trMatrix33;
 
             bool localBlocked = request.blockWorld.getBlock(trX, trY, trZ).id != 0 && startZ != 0;
-            if (endSlopeX == 1 && x +1 == endX && blockMap[y - startY][x-1 - startX] && xOffset != 0) localBlocked = true;
-            if (endSlopeY == 1 && y +1 == endY && blockMap[y-1 - startY][x - startX] && yOffset != 0) localBlocked = true;
+            if (endSlopeX == 1 && x +1 == endX && blockMap[y - startY][x-1 - startX]) localBlocked = true;
+            if (endSlopeY == 1 && y +1 == endY && blockMap[y-1 - startY][x - startX]) localBlocked = true;
 
             blockMap[y - startY][x - startX] = localBlocked;
 
@@ -498,7 +498,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
 
 
     int prevY = -1;
-    float leeway = 0.25;
+    float leeway = request.settings.etherwarpLeeway;
     for (int y = 0; y < yLen; y++) {
         if (!yEdges[y]) [[likely]] continue;
         int prevX = -1;
@@ -578,21 +578,25 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, f
 }
 
 void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate start, int radius) {
+    float offset = request.settings.etherwarpOffset;
         for (auto & i : TRANSFORM_MATRICES) {
+            if (request.blockWorld.getBlock(start.x + 1 * i[0], start.y + 1 * i[3], start.z + 1 * i[6]).id == 0)
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                       0.4, 0, 0,
+                       offset, 0, 0,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
                        i[6],i[7], i[8], result
             );
+            if (request.blockWorld.getBlock(start.x + 1 * i[1], start.y + 1 * i[4], start.z + 1 * i[7]).id == 0)
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                       0, 0.4, 0,
+                       0, offset, 0,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
                        i[6],i[7], i[8], result
             );
+            if (request.blockWorld.getBlock(start.x + 1 * i[2], start.y + 1 * i[5], start.z + 1 * i[8]).id == 0)
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                       0, 0, 0.4,
+                       0, 0, offset,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
                        i[6],i[7], i[8], result

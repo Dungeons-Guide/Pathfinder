@@ -18,6 +18,9 @@ typedef struct {
     bool stonkteleport;
     bool etherwarp;
     uint32_t maxStonkLen;
+    int etherwarpRadius;
+    float etherwarpLeeway;
+    float etherwarpOffset;
 } AlgorithmSettings;
 
 

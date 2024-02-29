@@ -110,6 +110,9 @@ void PathfindResult::WriteTo(std::ostream& outfile_1) {
     _writeBool(outfile_1, settings.stonkteleport);
     _writeBool(outfile_1, settings.etherwarp);
     _writeInt(outfile_1, settings.maxStonkLen);
+    _writeInt(outfile_1, settings.etherwarpRadius);
+    _writeFloat(outfile_1, settings.etherwarpLeeway);
+    _writeFloat(outfile_1, settings.etherwarpOffset);
     _writeUTF(outfile_1, "TRGT");
     _writeInt(outfile_1, target.size());
     for (const auto &item: target) {

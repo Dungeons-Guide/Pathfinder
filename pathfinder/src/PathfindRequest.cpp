@@ -22,6 +22,11 @@ bool _readBool(std::vector<unsigned char>::iterator  &it) {
     return false;
 }
 
+float _readFloat(std::vector<unsigned char>::iterator &it) {
+    uint32_t b4float = _readInt(it);
+    return *reinterpret_cast<float*>(&b4float);
+}
+
 std::string _readUTF(std::vector<unsigned char>::iterator &it) {
     uint16_t len = _readShort(it);
     return {it, it += len};
@@ -84,6 +89,9 @@ void PathfindRequest::ReadRequest(std::istream& infile) {
     settings.stonkteleport = _readBool(head);
     settings.etherwarp = _readBool(head);
     settings.maxStonkLen = _readInt(head);
+    settings.etherwarpRadius = _readInt(head);
+    settings.etherwarpLeeway = _readFloat(head);
+    settings.etherwarpOffset = _readFloat(head);
 
 
     magicVal = _readUTF(head);

@@ -12,7 +12,7 @@
 using namespace std;
 
 
-typedef pair<double, Coordinate> NodePair;
+typedef pair<float, Coordinate> NodePair;
 
 PathfindNode& Pathfinder::GetNode(int  x, int  y, int  z) {
     return nodes[x+5][z+5][y+5 - minY];
@@ -34,7 +34,7 @@ bool emptyFor(Block b) {
         b.id == 31 || b.id == 32 || b.id == 175 || b.id == 104 || b.id == 105 ||
         b.id == 141 || b.id == 142 || b.id == 115 || b.id == 59) return true;
     //plants: 1. sapling 2. dandellion 3. rest of flower 4. brown mushroom 5. red mushroom
-    //        6. grass/fern 7. deadbush 8. double plant 9. pumpkin stem 10. melon stem
+    //        6. grass/fern 7. deadbush 8. float plant 9. pumpkin stem 10. melon stem
     //        11. potato 12. carrot 13. wart 14. wheat
     if (b.id == 77 || b.id == 143) return true; // buttons, stone and wood
     if (b.id == 51) return true; // fire
@@ -105,7 +105,7 @@ void Pathfinder::Populate() {
                     if (neighborCoordinate.y <= minY - 5) continue;
                     if (neighborCoordinate.y >= maxY + 5) continue;
                     if (!isBlocked(neighborState) && coord.y > minY - 5 && coord.y < maxY + 5) {
-                        double gScore = n.gScore + 4;
+                        float gScore = n.gScore + 4;
                         if (gScore < neighbor->gScore) {
                             neighbor->parent = coord;
                             neighbor->stonkLen = 0;
@@ -149,7 +149,7 @@ void Pathfinder::Populate() {
                     auto neighborState = request.octNodeWorld.getOctNode(target).data;
                     if (!isOnGround(neighborState)) continue;
 
-                    double gScore = n.gScore+ 20; // don't etherwarp unless it saves like 10 blocks
+                    float gScore = n.gScore+ 20; // don't etherwarp unless it saves like 10 blocks
                     if (gScore < neighbor->gScore) {
                         neighbor->parent = coord;
                         neighbor->stonkLen = 0;
@@ -197,7 +197,7 @@ void Pathfinder::Populate() {
                 if (neighborCoordinate.y >= maxY + 5) continue;
 
                 if (!isBlocked(neighborState) && down < 10) {
-                    double gScore = n.gScore+ 20 + sqrt(down*down + 16);
+                    float gScore = n.gScore+ 20 + sqrt(down*down + 16);
                     if (gScore < neighbor->gScore) {
                         neighbor->parent = coord;
                         neighbor->stonkLen = 0;
@@ -243,7 +243,7 @@ void Pathfinder::Populate() {
     
     
                 if (!isBlocked(neighborState) && 5 < down && down < 30) {
-                    double gScore = n.gScore+ 20 + sqrt(down*down + 16);
+                    float gScore = n.gScore+ 20 + sqrt(down*down + 16);
                     if (gScore < neighbor->gScore) {
                         neighbor->parent = coord;
                         neighbor->stonkLen = 0;
@@ -297,7 +297,7 @@ void Pathfinder::Populate() {
                 if (neighborCoordinate.y >= maxY + 5) continue;
 
 
-                double gScore = n.gScore;
+                float gScore = n.gScore;
                 if (!isClip(neighborState) && elligibleForTntPearl)
                     gScore += 20; // tntpearl slow
                 if (!isBlocked(neighborState) && isClip(neighborState)) {
@@ -361,7 +361,7 @@ void Pathfinder::Populate() {
                 bool superboomthingy = (originNodeState == COLLISION_STATE_SUPERBOOMABLE_AIR || originNodeState == COLLISION_STATE_SUPERBOOMABLE_GROUND) &&
                                           (neighborState != COLLISION_STATE_SUPERBOOMABLE_AIR && neighborState != COLLISION_STATE_SUPERBOOMABLE_GROUND);
 
-                double gScore = n.gScore+ (superboomthingy ? 10 : isOnGround(neighborState) || facingidx == 2 ? 1 : 2 * (updist + 1));
+                float gScore = n.gScore+ (superboomthingy ? 10 : isOnGround(neighborState) || facingidx == 2 ? 1 : 2 * (updist + 1));
                 if (gScore < neighbor->gScore) {
                     neighbor->parent = coord;
                     if (isBlocked(neighborState))
@@ -421,16 +421,16 @@ int TRANSFORM_MATRICES[24][9] = {
 
 };
 
-void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
-                            double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
-                            double xOffset, double yOffset, double zOffset, int trMatrix11,
+void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX,
+                            float endSlopeX, float startSlopeY, float endSlopeY, uint32_t radius,
+                            float xOffset, float yOffset, float zOffset, int trMatrix11,
                             int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
                             int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
                             vector<Coordinate> &result) {
     if (startZ > radius) return;
     shadowcasts++;
     // boom. radius is manhatten radius. lol.
-    double realZ = startZ - zOffset;
+    float realZ = startZ - zOffset;
 
     int startY =  max(0, (int) floor(startSlopeY * (realZ - 0.5) - 0.5 + yOffset)) - 1;
     int endY = (int) ceil(endSlopeY * (realZ + 0.5) - 0.5 + yOffset) + 1;
@@ -454,11 +454,11 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
         }
     }
     for (int y = startY * 2 + 1; y < endY * 2; y ++) {
-        double currentSlopeY = ((y-yOffset) / 2.0) / (realZ-0.5);
-        double currentSlopeYP = ((y-yOffset) / 2.0) / (realZ);
+        float currentSlopeY = ((y-yOffset) / 2.0) / (realZ-0.5);
+        float currentSlopeYP = ((y-yOffset) / 2.0) / (realZ);
         for (int x = startX * 2 + 1; x < endX * 2; x++) {
-            double currentSlopeX = ((x-xOffset) / 2.0) / (realZ-0.5) ;
-            double currentSlopeXP = ((x-xOffset) / 2.0) / (realZ);
+            float currentSlopeX = ((x-xOffset) / 2.0) / (realZ-0.5) ;
+            float currentSlopeXP = ((x-xOffset) / 2.0) / (realZ);
 
             bool localBlocked = blockMap[y/2 - startY][x/2 - startX];
             if (x%2 != 0) localBlocked &= blockMap[y/2 - startY][x/2 - startX+1];
@@ -495,7 +495,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
 
 
     int prevY = -1;
-    double leeway = 0.25;
+    float leeway = 0.25;
     for (int y = 0; y < yLen; y++) {
         if (!yEdges[y]) [[likely]] continue;
         int prevX = -1;
@@ -508,10 +508,10 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
 
 
                 if (diagonalGood && yGood && xGood) {
-                    double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
-                    double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
-                    double startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5 - leeway) / (realZ + 0.5));
-                    double endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5 - leeway) / (realZ + 0.5));
+                    float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
+                    float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
+                    float startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5f - leeway) / (realZ + 0.5f));
+                    float endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5f - leeway) / (realZ + 0.5f));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                         [[likely]]
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
@@ -519,10 +519,10 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                                    xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
                     }
                 } else if ((xGood && !yGood) || (yGood && !xGood)) {
-                    double startSlopeYY = yGood ? max(startSlopeY, (prevY + startY - yOffset +0.5 - leeway) / (realZ + 0.5)) : max(startSlopeY, (prevY + startY - yOffset +0.5 + leeway) / (realZ - 0.5));
-                    double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
-                    double startSlopeXX  = xGood ? max(startSlopeX, (prevX  + startX - xOffset+0.5 - leeway) / (realZ + 0.5)) : max(startSlopeX, (prevX  + startX - xOffset+ 0.5 + leeway) / (realZ - 0.5));
-                    double endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5 - leeway) / (realZ + 0.5));
+                    float startSlopeYY = yGood ? max(startSlopeY, (prevY + startY - yOffset +0.5f - leeway) / (realZ + 0.5f)) : max(startSlopeY, (prevY + startY - yOffset +0.5f + leeway) / (realZ - 0.5f));
+                    float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
+                    float startSlopeXX  = xGood ? max(startSlopeX, (prevX  + startX - xOffset+0.5f - leeway) / (realZ + 0.5f)) : max(startSlopeX, (prevX  + startX - xOffset+ 0.5f + leeway) / (realZ - 0.5f));
+                    float endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5f - leeway) / (realZ + 0.5f));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                         [[likely]]
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
@@ -531,10 +531,10 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                     }
                 } else if (!diagonalGood && yGood && xGood) {
                     {
-                        double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5 + leeway) / (realZ - 0.5));
-                        double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
-                        double startSlopeXX = max(startSlopeX, (prevX + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
-                        double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
+                        float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5f + leeway) / (realZ - 0.5f));
+                        float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
+                        float startSlopeXX = max(startSlopeX, (prevX + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
+                        float endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
                         if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                             [[likely]]
                             ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
@@ -543,10 +543,10 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                         }
                     }
                     {
-                        double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5 - leeway) / (realZ + 0.5));
-                        double endSlopeYY = min(endSlopeY, (prevY + startY - yOffset + 0.5 + leeway) / (realZ - 0.5));
-                        double startSlopeXX  =  max(startSlopeX, (prevX  + startX - xOffset+0.5 + leeway) / (realZ - 0.5));
-                        double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
+                        float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5f - leeway) / (realZ + 0.5f));
+                        float endSlopeYY = min(endSlopeY, (prevY + startY - yOffset + 0.5f + leeway) / (realZ - 0.5f));
+                        float startSlopeXX  =  max(startSlopeX, (prevX  + startX - xOffset+0.5f + leeway) / (realZ - 0.5f));
+                        float endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
                         if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                             [[likely]]
                             ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
@@ -555,10 +555,10 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
                         }
                     }
                 } else {
-                    double startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5 + leeway) / (realZ - 0.5));
-                    double endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5 - leeway) / (realZ + 0.5));
-                    double startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5 + leeway) / (realZ - 0.5));
-                    double endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5 - leeway) / (realZ + 0.5));
+                    float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5f + leeway) / (realZ - 0.5f));
+                    float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
+                    float startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5f + leeway) / (realZ - 0.5f));
+                    float endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
                     if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
                         [[likely]]
                         ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
@@ -575,6 +575,7 @@ void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, d
 }
 
 void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate start, int radius) {
+    std::cout << "Shadow casting on " << start.x << " / "<<start.y << " / " <<start.z << " ";
         for (auto & i : TRANSFORM_MATRICES) {
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
                        0.4, 0, 0,
@@ -595,6 +596,7 @@ void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate star
                        i[6],i[7], i[8], result
             );
         }
+        std::cout << result.size() << "Nodes open" << std::endl;
 }
 
 Pathfinder::Pathfinder(PathfindRequest& req): request(req) {

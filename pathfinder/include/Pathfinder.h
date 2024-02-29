@@ -26,7 +26,7 @@ enum ConnectionType : uint8_t {
 
 struct PathfindNode {
     Coordinate parent = {0,0,0};
-    double gScore = std::numeric_limits<double>::max();
+    float gScore = std::numeric_limits<float>::max();
     uint8_t stonkLen = 0;
     ConnectionType type = ConnectionType_UNPOPULATED;
 } ;
@@ -34,9 +34,9 @@ struct PathfindNode {
 class Pathfinder {
 private:
 
-    void ShadowCast(int centerX, int centerY, int centerZ, int startZ, double startSlopeX,
-                    double endSlopeX, double startSlopeY, double endSlopeY, uint32_t radius,
-                    double xOffset, double yOffset, double zOffset,
+    void ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX,
+                    float endSlopeX, float startSlopeY, float endSlopeY, uint32_t radius,
+                    float xOffset, float yOffset, float zOffset,
                     int trMatrix11, int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
                     int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
                     std::vector<Coordinate> &result);

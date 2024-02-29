@@ -75,11 +75,11 @@ void PathfindRequest::ReadRequest(std::istream& infile) {
 
     id = _readUTF(head);
     uuid = _readUTF(head);
-    if (uuid != "70a1451a-5430-40bd-b20b-13245aac910a") {
-        std::cerr << "only market";
-        exit(-1);
-
-    }
+//    if (uuid != "70a1451a-5430-40bd-b20b-13245aac910a") {
+//        std::cerr << "only market";
+//        exit(-1);
+//
+//    }
     name = _readUTF(head);
 
     magicVal = _readUTF(head);

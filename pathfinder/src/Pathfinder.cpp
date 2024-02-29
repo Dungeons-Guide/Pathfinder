@@ -581,26 +581,26 @@ void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate star
     float offset = request.settings.etherwarpOffset;
         for (auto & i : TRANSFORM_MATRICES) {
             if (request.blockWorld.getBlock(start.x + 1 * i[0], start.y + 1 * i[3], start.z + 1 * i[6]).id == 0)
-            ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                       offset, 0, 0,
-                       i[0] ,i[1],i[2],
-                       i[3], i[4], i[5],
-                       i[6],i[7], i[8], result
-            );
+                ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                           offset, 0, 0,
+                           i[0] ,i[1],i[2],
+                           i[3], i[4], i[5],
+                           i[6],i[7], i[8], result
+                );
             if (request.blockWorld.getBlock(start.x + 1 * i[1], start.y + 1 * i[4], start.z + 1 * i[7]).id == 0)
-            ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                       0, offset, 0,
-                       i[0] ,i[1],i[2],
-                       i[3], i[4], i[5],
-                       i[6],i[7], i[8], result
-            );
+                ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                           0, offset, 0,
+                           i[0] ,i[1],i[2],
+                           i[3], i[4], i[5],
+                           i[6],i[7], i[8], result
+                );
             if (request.blockWorld.getBlock(start.x + 1 * i[2], start.y + 1 * i[5], start.z + 1 * i[8]).id == 0)
-            ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                       0, 0, offset,
-                       i[0] ,i[1],i[2],
-                       i[3], i[4], i[5],
-                       i[6],i[7], i[8], result
-            );
+                ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
+                           0, 0, offset,
+                           i[0] ,i[1],i[2],
+                           i[3], i[4], i[5],
+                           i[6],i[7], i[8], result
+                );
         }
 }
 

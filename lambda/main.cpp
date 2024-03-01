@@ -125,23 +125,31 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     result.Init(pathfinder);
 
 
-    Aws::S3::Model::PutObjectRequest request2;
+    int runcnt = 0;
     auto time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    request2.WithBucket(std::getenv("TARGET_BUCKET")).WithKey(key+"-"+std::to_string(time)+".pfres");
+    while(true) {
+        runcnt++;
+        Aws::S3::Model::PutObjectRequest request2;
+        request2.WithBucket(std::getenv("TARGET_BUCKET")).WithKey(key+"-"+std::to_string(time)+".pfres");
 
-    std::shared_ptr<Aws::IOStream> inputData = Aws::MakeShared<Aws::StringStream>("StringStream", std::stringstream::in | std::stringstream::out | std::stringstream::binary);
-    result.WriteTo(*inputData);
-    request2.SetBody(inputData);
+        std::shared_ptr<Aws::IOStream> inputData = Aws::MakeShared<Aws::StringStream>("StringStream", std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+        result.WriteTo(*inputData);
+        request2.SetBody(inputData);
 
 
-    Aws::S3::Model::PutObjectOutcome outcome2 =
-            client.PutObject(request2);
-    if (!outcome2.IsSuccess()) {
-        AWS_LOGSTREAM_ERROR(TAG, "Failed with error: " << outcome2.GetError());
-        return invocation_response::failure(outcome.GetError().GetMessage(), "Upload Failure"); ;
+        Aws::S3::Model::PutObjectOutcome outcome2 =
+                client.PutObject(request2);
+        if (!outcome2.IsSuccess()) {
+            AWS_LOGSTREAM_ERROR(TAG, "Failed with error: " << outcome2.GetError());
+            if (runcnt > 5) {
+                return invocation_response::failure(outcome.GetError().GetMessage(), "Upload Failure"); ;
+            }
+            continue;
+        }
+
+        AWS_LOGSTREAM_INFO(TAG, "Saved as "<< request2.GetKey() << " on " << request2.GetBucket());
+        break;
     }
-
-    AWS_LOGSTREAM_INFO(TAG, "Saved as "<< request2.GetKey() << " on " << request2.GetBucket());
 
     Aws::S3::Model::DeleteObjectRequest request3;
     request3.WithBucket(bucket).WithKey(key);
@@ -150,7 +158,14 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
         AWS_LOGSTREAM_ERROR(TAG, "Failed to cleanup s3 file: " << request3.GetBucket()<< "/"<< request3.GetKey());
     }
 
-    return invocation_response::success(request2.GetBucket()+"/"+request2.GetKey(), "text/plain");
+    JsonValue value;
+    value.WithString("bucket", std::getenv("TARGET_BUCKET"));
+    value.WithString("key", key+"-"+std::to_string(time)+".pfres");
+
+    auto apig_response = value.View().WriteCompact();
+    AWS_LOGSTREAM_DEBUG(TAG, "api gateway response: " << apig_response);
+
+    return invocation_response::success(std::move(apig_response), "application/json");
 }
 
 std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory()
@@ -167,6 +182,7 @@ int main()
     SDKOptions options;
     options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Trace;
     options.loggingOptions.logger_create_fn = GetConsoleLoggerFactory();
+    options.httpOptions.installSigPipeHandler = true;
     InitAPI(options);
     {
         Client::ClientConfiguration config;

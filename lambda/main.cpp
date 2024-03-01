@@ -99,8 +99,8 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     auto start = std::chrono::steady_clock::now();
 
     Pathfinder pathfinder(pathfindRequest);
+    AWS_LOGSTREAM_INFO(TAG, "Min" << pathfinder.minY << " Max " << pathfinder.maxY));
     pathfinder.Populate();
-
     AWS_LOGSTREAM_INFO(TAG, "Elapsed(ms)=" << since(start).count());
 
     long cnt = 0;

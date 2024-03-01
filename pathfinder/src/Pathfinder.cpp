@@ -638,5 +638,4 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
                                                   vector<vector<PathfindNode> >(request.octNodeWorld.zLen + 10,
                                                                                 vector<PathfindNode>((maxY - minY) + 10, PathfindNode{})));
     shadowcasts = 0;
-    std::cout << "Min " << minY << " Max " <<maxY << std::endl;
 }

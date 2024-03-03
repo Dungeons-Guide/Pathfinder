@@ -5,3 +5,4 @@ README.md
 processFiles.sh
 requests/*
 results/*
+./CMakeLists.txt

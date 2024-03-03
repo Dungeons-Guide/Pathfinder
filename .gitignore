@@ -8,3 +8,4 @@ cmake-build-release/**
 .idea
 
 pathfind-request-processor.zip
+build.sh

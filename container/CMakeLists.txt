@@ -1,3 +1,4 @@
+find_package(ZLIB REQUIRED)
 find_package(AWSSDK COMPONENTS s3)
 
 add_executable(pathfind-request-processor-container "main.cpp")

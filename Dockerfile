@@ -11,7 +11,7 @@ RUN apk update && \
         git=2.43.0-r0
 
 WORKDIR /
-RUN git clone --recurse-submodules https://github.com/aws/aws-sdk-cpp
+RUN git clone --recurse-submodules https://github.com/aws/aws-sdk-cpp --depth 1
 RUN apk add libcrypto3 crypto++ openssl-dev curl-dev zlib-dev
 
 RUN cd aws-sdk-cpp  && mkdir build && cd /aws-sdk-cpp/build && \

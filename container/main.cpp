@@ -43,7 +43,7 @@ int main()
     
     Client::ClientConfiguration config;
     config.region = Aws::Environment::GetEnv("AWS_REGION");
-    config.caFile = "/etc/pki/tls/certs/ca-bundle.crt";
+    config.caFile = "/etc/ssl/certs/ca-certificates.crt";
 
     S3::S3Client client(config);
         

@@ -31,6 +31,18 @@ auto since(std::chrono::time_point<clock_t, duration_t> const& start)
 {
     return std::chrono::duration_cast<result_t>(clock_t::now() - start);
 }
+Aws::Utils::Json::JsonValue s3read_json(const Aws::String& bucket,const Aws::String& key, const Aws::S3::S3Client& client) {
+    Aws::S3::Model::GetObjectRequest object_request;
+    object_request.WithBucket( bucket ).WithKey( key );
+
+    auto object_outcome = client.GetObject(object_request);
+
+    if (object_outcome.IsSuccess()) {
+        return Aws::Utils::Json::JsonValue( object_outcome.GetResult().GetBody() );
+    } else {
+         throw std::runtime_error("S3 connection failed");
+    };
+};
 
 
 int main()
@@ -46,9 +58,17 @@ int main()
     config.caFile = "/etc/ssl/certs/ca-certificates.crt";
 
     S3::S3Client client(config);
-        
-    auto bucket = std::string (std::getenv("SOURCE_BUCKET"));
-    auto key = std::string(std::getenv("SOURCE_KEY"));
+
+    auto arrayIdx = std::string( std::getenv("AWS_BATCH_JOB_ARRAY_INDEX"));
+
+
+    auto listbucket = std::string (std::getenv("SOURCE_BUCKET"));
+    auto listkey = std::string(std::getenv("SOURCE_KEY"));
+    auto json = s3read_json(listbucket, listkey, client);
+    auto val = json.View().AsArray().GetItem(std::stoi(arrayIdx));
+    auto key = val.GetString("k");
+    auto bucket = val.GetString("b");
+
 
     std::cout << "Attempting to download file from s3://" << bucket << "/" << key << std::endl;
 
@@ -62,6 +82,10 @@ int main()
     );
 
     auto outcome = client.GetObject(request);
+    if (outcome.GetError().GetResponseCode() == Aws::Http::HttpResponseCode::NOT_FOUND) {
+        std::cerr << "Download failure: File not found! Assuming pf already completed for this one." << std::endl;
+        return 0;
+    }
     if (!outcome.IsSuccess()) {
         std::cerr << "Download Failure: Failed with error: " << outcome.GetError() << std::endl;
         exit(-1);
@@ -117,10 +141,13 @@ int main()
 
     int runcnt = 0;
     auto time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+
+
     while(true) {
         runcnt++;
         Aws::S3::Model::PutObjectRequest request2;
-        request2.WithBucket(std::getenv("TARGET_BUCKET")).WithKey(std::getenv("TARGET_KEY"));
+        request2.WithBucket(std::getenv("TARGET_BUCKET")).WithKey(key);
 
         std::shared_ptr<Aws::IOStream> inputData = Aws::MakeShared<Aws::StringStream>("StringStream", std::stringstream::in | std::stringstream::out | std::stringstream::binary);
         result.WriteTo(*inputData);

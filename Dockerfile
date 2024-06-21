@@ -3,12 +3,12 @@ LABEL authors="syeyoung"
 
 RUN apk update && \
     apk add --no-cache \
-        build-base=0.5-r3 \
-        cmake=3.27.8-r0 \
-        boost-dev=1.82.0-r3 \
-        libcurl=8.5.0-r0 \
-        openssl=3.1.4-r5 \
-        git=2.43.0-r0
+        build-base \
+        cmake \
+        boost-dev \
+        libcurl \
+        openssl \
+        git
 
 WORKDIR /
 RUN git clone --recurse-submodules https://github.com/aws/aws-sdk-cpp --depth 1

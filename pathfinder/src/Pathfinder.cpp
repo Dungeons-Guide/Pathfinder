@@ -62,6 +62,7 @@ int _distSq(int dx, int dy, int dz) {
     return dx * dx + dy * dy + dz * dz;
 }
 
+
 void Pathfinder::Populate() {
     priority_queue<NodePair, vector<NodePair>, greater<NodePair>> pq;
 
@@ -132,21 +133,20 @@ void Pathfinder::Populate() {
 
                 shadowcastRes.clear();
                 // shadow casting~
-                RealShadowCast(shadowcastRes, start, request.settings.etherwarpRadius);
-                for (Coordinate& target : shadowcastRes) {
-                    if (_distSq(target.x - coord.x, target.y - coord.y - 1, target.z - coord.z) > request.settings.etherwarpRadius * request.settings.etherwarpRadius * 4) continue;
-                    if (target.x < 2) continue;
-                    if (target.y -3 < minY - 5) continue;
-                    if (target.z < 2) continue;
-                    if (target.x >= request.octNodeWorld.xLen ) continue;
-                    if (target.y -3 >= maxY + 5) continue;
-                    if (target.z  >= request.octNodeWorld.zLen ) continue;
+                this->shadowCaster.RealShadowCast([&](int x, int y, int z) {
+                    if (_distSq(x - coord.x, y - coord.y - 1, z - coord.z) > request.settings.etherwarpRadius * request.settings.etherwarpRadius * 4) return ;
+                    if (x < 2) return;
+                    if (y -3 < minY - 5) return;
+                    if (z < 2) return;
+                    if (x >= request.octNodeWorld.xLen ) return;
+                    if (y -3 >= maxY + 5) return;
+                    if (z  >= request.octNodeWorld.zLen ) return;
 
-                    target.y -= 3;
+                    y -= 3;
 
-                    PathfindNode *neighbor = &GetNode(target);
-                    auto neighborState = request.octNodeWorld.getOctNode(target).data;
-                    if (!isOnGround(neighborState)) continue;
+                    PathfindNode *neighbor = &GetNode(x,y,z);
+                    auto neighborState = request.octNodeWorld.getOctNode(x,y,z).data;
+                    if (!isOnGround(neighborState)) return;
 
                     float gScore = n.gScore+ 20; // don't etherwarp unless it saves like 10 blocks
                     if (gScore < neighbor->gScore) {
@@ -155,9 +155,12 @@ void Pathfinder::Populate() {
                         neighbor->type = ConnectionType_ETHERWARP;
                         neighbor->gScore= gScore;
 
-                        pq.emplace(neighbor->gScore, target);
+                        pq.emplace(neighbor->gScore, Coordinate{x,y,z});
                     }
-                }
+                    }, start, request.settings.etherwarpRadius);
+//                for (Coordinate& target : shadowcastRes) {
+//
+//                }
             }
         }
 
@@ -384,226 +387,8 @@ void Pathfinder::Populate() {
 }
 
 
-int TRANSFORM_MATRICES[24][9] = {
-        // rotated vers
-        {1,0,0, 0,1,0,0,0,1},
-        {0,1,0, 0,0,1,1,0,0},
-        {0,0,1, 1,0,0,0,1,0}, // you might ask, "but shouldn't there be 6 rotated versions?" well xyz and yxz is same thing, because prism is symmetric. So divide by two.
 
-        // flipping!
-        {-1,0,0, 0,1,0,0,0,1},
-        {0,-1,0, 0,0,1,1,0,0},
-        {0,0,-1, 1,0,0,0,1,0},
-
-        {1,0,0, 0,-1,0,0,0,1},
-        {0,1,0, 0,0,-1,1,0,0},
-        {0,0,1, -1,0,0,0,1,0},
-
-        {-1,0,0, 0,-1,0,0,0,1},
-        {0,-1,0, 0,0,-1,1,0,0},
-        {0,0,-1, -1,0,0,0,1,0},
-
-        {1,0,0, 0,1,0,0,0,-1},
-        {0,1,0, 0,0,1,-1,0,0},
-        {0,0,1, 1,0,0,0,-1,0},
-
-        {-1,0,0, 0,1,0,0,0,-1},
-        {0,-1,0, 0,0,1,-1,0,0},
-        {0,0,-1, 1,0,0,0,-1,0},
-
-        {1,0,0, 0,-1,0,0,0,-1},
-        {0,1,0, 0,0,-1,-1,0,0},
-        {0,0,1, -1,0,0,0,-1,0},
-        {-1,0,0, 0,-1,0,0,0,-1},
-        {0,-1,0, 0,0,-1,-1,0,0},
-        {0,0,-1, -1,0,0,0,-1,0},
-
-};
-
-void Pathfinder::ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX,
-                            float endSlopeX, float startSlopeY, float endSlopeY, int  radius,
-                            float xOffset, float yOffset, float zOffset, int trMatrix11,
-                            int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
-                            int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
-                            vector<Coordinate> &result) {
-    if (startZ > radius) return;
-    shadowcasts++;
-    // boom. radius is manhatten radius. lol.
-    float realZ = startZ - zOffset;
-
-    int startY =  max(0, (int) floor(startSlopeY * (realZ - 0.5) - 0.5 + yOffset)) - 1;
-    int endY = (int) ceil(endSlopeY * (realZ + 0.5) - 0.5 + yOffset) + 1;
-    int startX = max(0, (int) floor(startSlopeX * (realZ - 0.5) - 0.5 + xOffset)) - 1;
-    int endX = (int) ceil(endSlopeX * (realZ + 0.5) - 0.5 + xOffset) + 1;
-    int yLen = endY - startY + 1;
-    int xLen = endX - startX + 1;
-    bool blockMap[yLen][xLen];
-    for (int y = startY; y <= endY; y++) {
-        for (int x = startX; x <= endX; x++) {
-            int trX = centerX + x * trMatrix11 + y * trMatrix21 + startZ * trMatrix31;
-            int trY = centerY + x * trMatrix12 + y * trMatrix22 + startZ * trMatrix32;
-            int trZ = centerZ + x * trMatrix13 + y * trMatrix23 + startZ * trMatrix33;
-
-            bool localBlocked = request.blockWorld.getBlock(trX, trY, trZ).id != 0 && startZ != 0;
-            if (endSlopeX == 1 && x +1 == endX && blockMap[y - startY][x-1 - startX]) localBlocked = true;
-            if (endSlopeY == 1 && y +1 == endY && blockMap[y-1 - startY][x - startX]) localBlocked = true;
-
-            blockMap[y - startY][x - startX] = localBlocked;
-
-        }
-    }
-    for (int y = startY * 2 + 1; y < endY * 2; y ++) {
-        float currentSlopeY = ((y-yOffset) / 2.0f) / (realZ-0.5f);
-        float currentSlopeYP = ((y-yOffset) / 2.0f) / (realZ);
-        for (int x = startX * 2 + 1; x < endX * 2; x++) {
-            float currentSlopeX = ((x-xOffset) / 2.0f) / (realZ-0.5f) ;
-            float currentSlopeXP = ((x-xOffset) / 2.0f) / (realZ);
-
-            bool localBlocked = blockMap[y/2 - startY][x/2 - startX];
-            if (x%2 != 0) localBlocked &= blockMap[y/2 - startY][x/2 - startX+1];
-            if (y%2 != 0) localBlocked &= blockMap[y/2 - startY +1][x/2 - startX];
-            if (x%2 != 0 && y%2 != 0) localBlocked &= blockMap[y/2 - startY + 1][x/2 - startX+1];
-            if (localBlocked) continue;
-
-            if (!(currentSlopeY < startSlopeY || currentSlopeY > endSlopeY || currentSlopeX < startSlopeX || currentSlopeX > endSlopeX)) [[likely]] {
-                int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2-1 ) * trMatrix31;
-                int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 -1) * trMatrix32;
-                int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2-1) * trMatrix33;
-                result.push_back({trX, trY, trZ});
-            }
-            if (!(currentSlopeYP < startSlopeY || currentSlopeYP > endSlopeY || currentSlopeXP < startSlopeX || currentSlopeXP > endSlopeX)) [[likely]]  {
-                int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2 ) * trMatrix31;
-                int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 ) * trMatrix32;
-                int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2 ) * trMatrix33;
-                result.push_back({trX, trY, trZ});
-            }
-        }
-    }
-    bool yEdges[yLen];
-    bool xEdges[xLen];
-    for (int y = 0; y < yLen;y ++) yEdges[y] = false;
-    for (int x = 0; x < xLen; x++) xEdges[x] = false;
-
-    for (int y = 0; y < yLen ; y++) {
-        for (int x = 0; x < xLen; x++) {
-            if (y < yLen -1 && blockMap[y][x] != blockMap[y+1][x])
-                yEdges[y] = true;
-            if (x < xLen - 1 && blockMap[y][x] != blockMap[y][x+1])
-                xEdges[x] = true;
-        }
-    }
-    yEdges[yLen - 1] = true;
-    xEdges[xLen - 1] = true;
-
-
-    int prevY = -1;
-    float leeway = request.settings.etherwarpLeeway;
-    for (int y = 0; y < yLen; y++) {
-        if (!yEdges[y]) [[likely]] continue;
-        int prevX = -1;
-        for (int x = 0; x < xLen; x++) {
-            if (!xEdges[x]) [[likely]] continue;
-            if (!blockMap[y][x]) {
-                bool yGood = prevY != -1 && !blockMap[prevY][x];
-                bool xGood = prevX != -1 && !blockMap[y][prevX];
-                bool diagonalGood = prevY != -1 && prevX != -1 && !blockMap[prevY][prevX];
-
-
-                if (diagonalGood && yGood && xGood) {
-                    float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
-                    float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
-                    float startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5f - leeway) / (realZ + 0.5f));
-                    float endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5f - leeway) / (realZ + 0.5f));
-                    if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
-                        [[likely]]
-                        ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                   startSlopeYY ,endSlopeYY , radius,
-                                   xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
-                    }
-                } else if ((xGood && !yGood) || (yGood && !xGood)) {
-                    float startSlopeYY = yGood ? max(startSlopeY, (prevY + startY - yOffset +0.5f - leeway) / (realZ + 0.5f)) : max(startSlopeY, (prevY + startY - yOffset +0.5f + leeway) / (realZ - 0.5f));
-                    float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
-                    float startSlopeXX  = xGood ? max(startSlopeX, (prevX  + startX - xOffset+0.5f - leeway) / (realZ + 0.5f)) : max(startSlopeX, (prevX  + startX - xOffset+ 0.5f + leeway) / (realZ - 0.5f));
-                    float endSlopeXX = min(endSlopeX, (x + startX - xOffset  + 0.5f - leeway) / (realZ + 0.5f));
-                    if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
-                        [[likely]]
-                        ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                   startSlopeYY ,endSlopeYY , radius,
-                                   xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
-                    }
-                } else if (!diagonalGood && yGood && xGood) {
-                    {
-                        float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5f + leeway) / (realZ - 0.5f));
-                        float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
-                        float startSlopeXX = max(startSlopeX, (prevX + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
-                        float endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
-                        if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
-                            [[likely]]
-                            ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                       startSlopeYY, endSlopeYY, radius,
-                                       xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
-                        }
-                    }
-                    {
-                        float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset +0.5f - leeway) / (realZ + 0.5f));
-                        float endSlopeYY = min(endSlopeY, (prevY + startY - yOffset + 0.5f + leeway) / (realZ - 0.5f));
-                        float startSlopeXX  =  max(startSlopeX, (prevX  + startX - xOffset+0.5f + leeway) / (realZ - 0.5f));
-                        float endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
-                        if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
-                            [[likely]]
-                            ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                       startSlopeYY ,endSlopeYY , radius,
-                                       xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
-                        }
-                    }
-                } else {
-                    float startSlopeYY = max(startSlopeY, (prevY + startY - yOffset + 0.5f + leeway) / (realZ - 0.5f));
-                    float endSlopeYY = min(endSlopeY, (y + startY - yOffset + 0.5f - leeway) / (realZ + 0.5f));
-                    float startSlopeXX  = max(startSlopeX, (prevX  + startX - xOffset+ 0.5f + leeway) / (realZ - 0.5f));
-                    float endSlopeXX = min(endSlopeX, (x + startX - xOffset + 0.5f - leeway) / (realZ + 0.5f));
-                    if (startSlopeYY < endSlopeYY && startSlopeXX < endSlopeXX) {
-                        [[likely]]
-                        ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
-                                   startSlopeYY ,endSlopeYY , radius,
-                                   xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
-                    }
-                    // normal case
-                }
-            }
-            prevX = x;
-        }
-        prevY = y;
-    }
-}
-
-void Pathfinder::RealShadowCast(std::vector<Coordinate>& result, Coordinate start, int radius) {
-    float offset = request.settings.etherwarpOffset;
-        for (auto & i : TRANSFORM_MATRICES) {
-            if (request.blockWorld.getBlock(start.x + 1 * i[0], start.y + 1 * i[3], start.z + 1 * i[6]).id == 0)
-                ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                           offset, 0, 0,
-                           i[0] ,i[1],i[2],
-                           i[3], i[4], i[5],
-                           i[6],i[7], i[8], result
-                );
-            if (request.blockWorld.getBlock(start.x + 1 * i[1], start.y + 1 * i[4], start.z + 1 * i[7]).id == 0)
-                ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                           0, offset, 0,
-                           i[0] ,i[1],i[2],
-                           i[3], i[4], i[5],
-                           i[6],i[7], i[8], result
-                );
-            if (request.blockWorld.getBlock(start.x + 1 * i[2], start.y + 1 * i[5], start.z + 1 * i[8]).id == 0)
-                ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
-                           0, 0, offset,
-                           i[0] ,i[1],i[2],
-                           i[3], i[4], i[5],
-                           i[6],i[7], i[8], result
-                );
-        }
-}
-
-Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
+Pathfinder::Pathfinder(PathfindRequest& req): shadowCaster(req), request(req) {
     int state = 0;
     this->minY = -1;
     this-> maxY = -1;
@@ -637,5 +422,4 @@ Pathfinder::Pathfinder(PathfindRequest& req): request(req) {
     nodes = vector<vector<vector<PathfindNode>>> (request.octNodeWorld.xLen + 10,
                                                   vector<vector<PathfindNode> >(request.octNodeWorld.zLen + 10,
                                                                                 vector<PathfindNode>((maxY - minY) + 10, PathfindNode{})));
-    shadowcasts = 0;
 }

@@ -6,6 +6,7 @@
 #define PATHFINDER2_PATHFINDER_H
 
 #include "PathfindRequest.h"
+#include "ShadowCaster.h"
 #include <limits>
 
 enum ConnectionType : uint8_t {
@@ -33,28 +34,22 @@ struct PathfindNode {
 
 class Pathfinder {
 private:
-
-    void ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX,
-                    float endSlopeX, float startSlopeY, float endSlopeY, int radius,
-                    float xOffset, float yOffset, float zOffset,
-                    int trMatrix11, int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
-                    int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
-                    std::vector<Coordinate> &result);
 public:
+    ShadowCaster shadowCaster;
     PathfindRequest& request;
     std::vector<std::vector<std::vector<PathfindNode> > > nodes;
     std::vector<std::vector<std::vector<std::vector<Coordinate>>>> etherwarps;
     int minY;
     int maxY;
-    int shadowcasts;
 
     void Populate();
     PathfindNode& GetNode(int x, int  y, int  z);
     PathfindNode& GetNode(const Coordinate& coord);
 
-    void RealShadowCast(std::vector<Coordinate>&, Coordinate start, int radius);
-    Pathfinder(PathfindRequest& request);
+
+    explicit Pathfinder(PathfindRequest& request);
 };
+
 
 
 #endif //PATHFINDER2_PATHFINDER_H

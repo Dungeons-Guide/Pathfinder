@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
         }
     }
     std::cout << "Open Nodes: " << cnt << std::endl << std::endl;
-    std::cout << "Shadow cast called: " << pathfinder.shadowcasts << "times" << std::endl;
+    std::cout << "Shadow cast called: " << pathfinder.shadowCaster.shadowCasts << "times" << std::endl;
 
     std::ofstream outfile_1(output, std::ios_base::binary);
     PathfindResult result;

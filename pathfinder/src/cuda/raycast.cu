@@ -29,12 +29,12 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
     short dx = targetX - locX;
     short dy = targetY - locY;
     short dz = targetZ - locZ;
-    float maxVal = max(abs(dx), max(abs(dy), abs(dz)));
+    short maxVal = max(abs(dx), max(abs(dy), abs(dz)));
 
 
-    float stepX = dx / maxVal;
-    float stepY = dy / maxVal;
-    float stepZ = dz / maxVal;
+    float stepX = dx / (float) maxVal;
+    float stepY = dy / (float) maxVal;
+    float stepZ = dz / (float) maxVal;
 
     float currX = locX;
     float currY = locY;
@@ -47,14 +47,14 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
         return;
     }
 
-    for (int i = 0; i < maxVal; i++) {
+    for (short i = 0; i <= maxVal; i++) {
         currX += stepX;
         currY += stepY;
         currZ += stepZ;
 
-        int x = (int) currX;
-        int y = (int) currY;
-        int z = (int) currZ;
+        short x = (short) currX;
+        short y = (short) currY;
+        short z = (short) currZ;
 
         if (x < 0 || y < 0 || z < 0 || x >= lenX || y >= lenY || z >= lenZ) {
             return;

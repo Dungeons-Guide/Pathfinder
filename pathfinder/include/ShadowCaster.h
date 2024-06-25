@@ -16,7 +16,7 @@ private:
     void ShadowCast(int centerX, int centerY, int centerZ, int startZ, float startSlopeX, float endSlopeX, float startSlopeY,
                     float endSlopeY, int radius, float xOffset, float yOffset, float zOffset, int trMatrix11, int trMatrix21,
                     int trMatrix31, int trMatrix12, int trMatrix22, int trMatrix32, int trMatrix13, int trMatrix23,
-                    int trMatrix33, std::vector<Coordinate> &result);
+                    int trMatrix33, const std::function <void (int, int, int)>& f);
 public:
     PathfindRequest& request;
     bool* blockMap;
@@ -24,6 +24,8 @@ public:
 
     int shadowCasts;
     int xLen, yLen, zLen;
+
+    int minY, maxY;
 
     void RealShadowCast(const std::function <void (int, int, int)>& f, Coordinate start, int radius);
 

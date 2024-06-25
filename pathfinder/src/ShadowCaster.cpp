@@ -49,6 +49,39 @@ ShadowCaster::ShadowCaster(PathfindRequest &request): request(request) {
     gpuErrchk( cudaMemcpy(this->cudaBlockMap, this->blockMap, sizeof(bool) *xLen * yLen * zLen, cudaMemcpyHostToDevice) );
 
     setupCudaMemory();
+
+
+    int state = 0;
+    this->minY = -1;
+    this-> maxY = -1;
+    for (int i = 0; i < 256; i++) {
+        Block b = request.blockWorld.getBlock(8, i, 8);
+        if (b.id != 0 && state == 0) {
+            state = 1;
+            this->minY = i ;
+        } else if (b.id == 0 && state == 1) {
+            state = 2;
+            this->maxY = i;
+        } else if (b.id != 0 && state == 2) {
+            state = 1;
+        }
+    }
+    if (minY == maxY) {
+        state = 0;
+        for (int i = 0; i < 256; i++) {
+            Block b = request.blockWorld.getBlock(request.blockWorld.xLen - 8,i,request.blockWorld.zLen - 8);
+            if (b.id != 0 && state == 0){
+                state = 1;
+                this->minY = i;
+            } else if (b.id == 0 && state == 1) {
+                state = 2;
+                this->maxY = i;
+            } else if (b.id != 0 && state == 2) {
+                state = 1;
+            }
+        }
+    }
+
 #endif
 }
 int TRANSFORM_MATRICES[24][9] = {
@@ -92,7 +125,7 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                             float xOffset, float yOffset, float zOffset, int trMatrix11,
                             int  trMatrix21, int  trMatrix31, int  trMatrix12, int  trMatrix22,
                             int  trMatrix32, int  trMatrix13, int  trMatrix23, int  trMatrix33,
-                            vector<Coordinate> &result) {
+                              const std::function <void (int, int, int)>& f) {
     if (startZ > radius) return;
     shadowCasts++;
     // boom. radius is manhatten radius. lol.
@@ -136,13 +169,13 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                 int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2-1 ) * trMatrix31;
                 int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 -1) * trMatrix32;
                 int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2-1) * trMatrix33;
-                result.push_back({trX, trY, trZ});
+                f(trX, trY, trZ);
             }
             if (!(currentSlopeYP < startSlopeY || currentSlopeYP > endSlopeY || currentSlopeXP < startSlopeX || currentSlopeXP > endSlopeX)) [[likely]]  {
                 int trX = centerX * 2 + 1+ (x) * trMatrix11 + (y) * trMatrix21 + (startZ*2 ) * trMatrix31;
                 int trY = centerY * 2 + 1+ (x) * trMatrix12 + (y) * trMatrix22 + (startZ*2 ) * trMatrix32;
                 int trZ = centerZ * 2 + 1+ (x) * trMatrix13 + (y) * trMatrix23 + (startZ*2 ) * trMatrix33;
-                result.push_back({trX, trY, trZ});
+                f(trX, trY, trZ);
             }
         }
     }
@@ -185,7 +218,7 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                         [[likely]]
                                 ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                            startSlopeYY ,endSlopeYY , radius,
-                                           xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                           xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, f);
                     }
                 } else if ((xGood && !yGood) || (yGood && !xGood)) {
                     float startSlopeYY = yGood ? max(startSlopeY, (prevY + startY - yOffset +0.5f - leeway) / (realZ + 0.5f)) : max(startSlopeY, (prevY + startY - yOffset +0.5f + leeway) / (realZ - 0.5f));
@@ -196,7 +229,7 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                         [[likely]]
                                 ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                            startSlopeYY ,endSlopeYY , radius,
-                                           xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                           xOffset, yOffset, zOffset, trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, f);
                     }
                 } else if (!diagonalGood && yGood && xGood) {
                     {
@@ -208,7 +241,7 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                             [[likely]]
                                     ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                                startSlopeYY, endSlopeYY, radius,
-                                               xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                               xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, f);
                         }
                     }
                     {
@@ -220,7 +253,7 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                             [[likely]]
                                     ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                                startSlopeYY ,endSlopeYY , radius,
-                                               xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                               xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, f);
                         }
                     }
                 } else {
@@ -232,7 +265,7 @@ void ShadowCaster::ShadowCast(int centerX, int centerY, int centerZ, int startZ,
                         [[likely]]
                                 ShadowCast(centerX, centerY, centerZ, startZ + 1, startSlopeXX, endSlopeXX,
                                            startSlopeYY ,endSlopeYY , radius,
-                                           xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, result);
+                                           xOffset, yOffset, zOffset,  trMatrix11, trMatrix21, trMatrix31, trMatrix12, trMatrix22, trMatrix32, trMatrix13, trMatrix23, trMatrix33, f);
                     }
                     // normal case
                 }
@@ -250,21 +283,14 @@ void ShadowCaster::RealShadowCast(const std::function <void (int, int, int)>& f,
 
     int len = radius + radius + 6;
     int fromX = max(0, start.x - len/2);
-    int fromY = max(0, start.y - len/2);
+    int fromY = max(minY, start.y - len/2);
     int fromZ = max(0, start.z - len/2);
 
     int toX = min(xLen, start.x + len/2);
-    int toY = min(yLen, start.y + len/2);
+    int toY = min(maxY, start.y + len/2);
     int toZ = min(zLen, start.z + len/2);
 
-    int lenX = toX - fromX;
-    int lenY = toY - fromY;
-    int lenZ = toZ - fromZ;
-
-    bool* resMap = static_cast<bool *>(malloc(sizeof(bool) * lenX * lenY * lenZ));
-
-
-    int cnt = callShadowCast(this->cudaBlockMap, resMap, xLen, yLen, zLen,
+    int cnt = callShadowCast(this->cudaBlockMap, xLen, yLen, zLen,
                    fromX, fromY, fromZ,
                    toX, toY, toZ,
                    start.x, start.y, start.z, radius + 3, coordinates);
@@ -274,25 +300,6 @@ void ShadowCaster::RealShadowCast(const std::function <void (int, int, int)>& f,
         f(coordinate.x* 2 + 1, coordinate.y * 2, coordinate.z * 2 + 1);
     }
 
-
-//    int count1, count2;
-
-//    for (int x = 0; x <  lenX; x++) {
-//        for (int y =0 ; y < lenY; y++) {
-//            for (int z = 0; z < lenZ; z++) {
-//                if (resMap[z * lenX * lenY + y * lenX + x]) {
-//                    count1++;
-//                    f((x+fromX) * 2 + 1, (y+fromY) * 2, (z+fromZ) * 2 + 1);
-////                    result.push_back(Coordinate{});
-//                } else {
-//                    count2++;
-//                }
-//            }
-//        }
-//    }
-//    std::cout << "cnts: " <<  cnt << std::endl;
-
-    free(resMap);
 #else
     float offset = request.settings.etherwarpOffset;
     for (auto & i : TRANSFORM_MATRICES) {
@@ -301,21 +308,21 @@ void ShadowCaster::RealShadowCast(const std::function <void (int, int, int)>& f,
                        offset, 0, 0,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
-                       i[6],i[7], i[8], result
+                       i[6],i[7], i[8], f
             );
         if (request.blockWorld.getBlock(start.x + 1 * i[1], start.y + 1 * i[4], start.z + 1 * i[7]).id == 0)
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
                        0, offset, 0,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
-                       i[6],i[7], i[8], result
+                       i[6],i[7], i[8], f
             );
         if (request.blockWorld.getBlock(start.x + 1 * i[2], start.y + 1 * i[5], start.z + 1 * i[8]).id == 0)
             ShadowCast(start.x, start.y, start.z, 1,0, 1, 0, 1, radius,
                        0, 0, offset,
                        i[0] ,i[1],i[2],
                        i[3], i[4], i[5],
-                       i[6],i[7], i[8], result
+                       i[6],i[7], i[8], f
             );
     }
 #endif

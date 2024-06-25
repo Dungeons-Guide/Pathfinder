@@ -40,13 +40,10 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
     float currY = locY;
     float currZ = locZ;
 
-//    int realIdx = (locZ - offZ) * resLenx * resLeny + (locY - offY) * resLenx + locX - offX;
-
     if (locX < offX || locY < offY || locZ < offZ || locX >= resLenx + offX || locY >= resLeny + offY || locZ >= resLenz + offZ) {
         return;
     }
     if (dx * dx + dy * dy + dz * dz > rad * rad) {
-//        res[realIdx] = false;
         return;
     }
 
@@ -60,18 +57,14 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
         int z = (int) currZ;
 
         if (x < 0 || y < 0 || z < 0 || x >= lenX || y >= lenY || z >= lenZ) {
-//            res[realIdx] = false;
             return;
         }
 
         int idx = z * lenX * lenY + y * lenX + x;
         if (req[idx]) {
-//            res[realIdx] = false;
             return;
         }
     }
-//    res[realIdx] = true;
-
     int val = atomicAdd(&listIdx, 1);
     arr[val] = {
             locX,locY,locZ
@@ -83,7 +76,7 @@ void setupCudaMemory() {
     gpuErrchk( cudaMalloc((void**) &gpu_coord, sizeof(Coordinate) * GPU_RETURN_SIZE) );
 }
 
-int callShadowCast(bool *req, bool *res, int lenX, int lenY, int lenZ,
+int callShadowCast(bool *req, int lenX, int lenY, int lenZ,
                     int fromX, int fromY, int fromZ, int toX, int toY, int toZ,
                     short targetX, short targetY, short targetZ, int rad, Coordinate* arr) {
 
@@ -97,15 +90,11 @@ int callShadowCast(bool *req, bool *res, int lenX, int lenY, int lenZ,
                                       (toX - fromX), (toY - fromY), (toZ - fromZ),
                                       targetX, targetY, targetZ, rad, gpu_coord);
 
-
-
 //    gpuErrchk( cudaPeekAtLastError() );
 //    gpuErrchk( cudaDeviceSynchronize() );
 
-
     gpuErrchk(cudaMemcpyFromSymbol(&count, listIdx, sizeof(int), 0, cudaMemcpyDeviceToHost));
 
-//    gpuErrchk( cudaMemcpy(res, gpu_res, sizeof(bool ) * (toX - fromX) * (toY - fromY) * (toZ - fromZ), cudaMemcpyDeviceToHost) );
     gpuErrchk( cudaMemcpy(arr, gpu_coord, sizeof(Coordinate ) * count, cudaMemcpyDeviceToHost) );
 
     return count;

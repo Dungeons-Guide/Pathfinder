@@ -9,7 +9,7 @@
 
 #include "PathfindRequest.h"
 
-int callShadowCast(bool *req, bool *res, int lenX, int lenY, int lenZ,
+int callShadowCast(bool *req, int lenX, int lenY, int lenZ,
                     int fromX, int fromY, int fromZ, int toX, int toY, int toZ,
                     short targetX, short targetY, short targetZ, int rad, Coordinate* coordinates);
 

@@ -3,6 +3,8 @@ results2/**
 results/**
 cmake-build-debug/**
 cmake-build-release/**
+cmake-build-release-remote-host/**
+cmake-build-debug--cuda/**
 
 .DS_Store
 .idea

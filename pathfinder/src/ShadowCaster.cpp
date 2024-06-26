@@ -293,12 +293,13 @@ void ShadowCaster::RealShadowCast(const std::function <void (int, int, int)>& f,
     int cnt = callShadowCast(this->cudaBlockMap, xLen, yLen, zLen,
                    fromX, fromY, fromZ,
                    toX, toY, toZ,
-                   start.x, start.y, start.z, radius + 3, coordinates);
+                   start.x, start.y, start.z,  request.settings.etherwarpOffset, radius + 3, coordinates);
 
     for (int i = 0; i < cnt; i++) {
         Coordinate coordinate = coordinates[i];
-        f(coordinate.x* 2 + 1, coordinate.y * 2, coordinate.z * 2 + 1);
+        f(coordinate.x, coordinate.y, coordinate.z);
     }
+//    std::cout << cnt << "umm" << std::endl;
 
 #else
     float offset = request.settings.etherwarpOffset;

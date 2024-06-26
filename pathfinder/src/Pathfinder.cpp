@@ -157,7 +157,7 @@ void Pathfinder::Populate() {
 
                         pq.emplace(neighbor->gScore, Coordinate{x,y,z});
                     }
-                    }, start, request.settings.etherwarpRadius);
+                }, start, request.settings.etherwarpRadius);
 //                for (Coordinate& target : shadowcastRes) {
 //
 //                }

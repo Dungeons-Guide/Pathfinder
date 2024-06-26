@@ -58,3 +58,11 @@ message(STATUS "Boost_VERSION: ${Boost_VERSION}")
 
 target_include_directories(pathfinder PRIVATE ${Boost_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 target_link_libraries(pathfinder ${Boost_LIBRARIES} ${PATHFINDER_EXTRA_LIBS})
+
+
+#set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} "-g -G")
+#set_target_properties(
+#        pathfinder
+#        PROPERTIES
+#        CUDA_RESOLVE_DEVICE_SYMBOLS ON
+#        CUDA_SEPARABLE_COMPILATION ON)

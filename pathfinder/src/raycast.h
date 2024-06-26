@@ -14,4 +14,7 @@ int callShadowCast(bool *req, int lenX, int lenY, int lenZ,
                     short targetX, short  targetY, short  targetZ, float offset, int rad, Coordinate* coordinates);
 
 void setupCudaMemory();
+
+int setupPotentialShadowcasts(bool *req, int lenX, int lenY, int lenZ, int fromY, int toY);
+
 #endif //PATHFINDER_RAYCAST_H

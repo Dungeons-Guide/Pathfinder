@@ -82,6 +82,8 @@ ShadowCaster::ShadowCaster(PathfindRequest &request): request(request) {
         }
     }
 
+    setupPotentialShadowcasts(this->cudaBlockMap, xLen, yLen, zLen, minY, maxY);
+
 #endif
 }
 int TRANSFORM_MATRICES[24][9] = {

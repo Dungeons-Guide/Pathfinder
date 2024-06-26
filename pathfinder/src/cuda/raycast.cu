@@ -17,6 +17,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 __device__ int listIdx;
 
+// Fix pixel perfect etherwarps and it would be fine.
 __device__ bool ashadowcast(bool* req,
                           int lenX, int lenY, int lenZ,
                           float locX, float locY, float locZ,
@@ -50,19 +51,24 @@ __device__ bool ashadowcast(bool* req,
 
 __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
                            int offX, int offY, int offZ,
-                           int resLenx, int resLeny, int resLenz,
+                           int toX, int toY, int toZ,
                            short targetX, short targetY, short targetZ,
                            float offset, int rad,
-                           Coordinate* arr) {
-    short locX = blockIdx.x * blockDim.x + threadIdx.x + offX;
-    short locY = blockIdx.y * blockDim.y + threadIdx.y + offY;
-    short locZ = blockIdx.z * blockDim.z + threadIdx.z + offZ;
+                           Coordinate* arr,
+                           Coordinate* potentialShadowcasts, int cnt) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx > cnt) return;
+
+    Coordinate location = potentialShadowcasts[idx];
+    short locX = location.x;
+    short locY = location.y;
+    short locZ = location.z;
 
     short dx = targetX - locX;
     short dy = targetY - locY;
     short dz = targetZ - locZ;
 
-    if (locX < offX || locY < offY || locZ < offZ || locX >= resLenx + offX || locY >= resLeny + offY || locZ >= resLenz + offZ) {
+    if (locX < offX || locY < offY || locZ < offZ || locX >= toX + offX || locY >= toY + offY || locZ >= toZ + offZ) {
         return;
     }
     if (dx * dx + dy * dy + dz * dz > rad * rad) {
@@ -84,8 +90,8 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
     return;
     label:
 
-    for (int x = 0; x < 1; x++) {
-        for (int z = 0; z < 1; z++) {
+    for (int x = 0; x < 2; x++) {
+        for (int z = 0; z < 2; z++) {
             for (int y = 0; y < 2; y++) {
                 bool flag = false;
                 int xTarget;
@@ -123,13 +129,89 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
 
         }
     }
+}
 
+__global__ void findPotentialShadowcastDestinations(bool *req, int lenX, int lenY, int lenZ,
+                                                    int fromY, int toY,
+                                                    Coordinate* arr) {
+    short locX = blockIdx.x * blockDim.x + threadIdx.x ;
+    short locY = blockIdx.y * blockDim.y + threadIdx.y + fromY;
+    short locZ = blockIdx.z * blockDim.z + threadIdx.z ;
+
+
+    if (locX < 0 || locY < 0 || locZ < 0 || locX >= lenX || locY >= toY || locZ >= lenZ) {
+        return;
+    }
+
+    for (int z = 0; z < 2; z++) {
+        for (int x = 0; x < 2; x++) {
+            for (int y = 0; y < 2; y++) {
+                int idx = (locZ-z) * lenX * lenY + (locY-2-y) * lenX + locX-x;
+                if (locZ - z < 0) continue;
+                if (locY - y  -2 <0) continue;
+                if (locX - x < 0) continue;
+
+                if (req[idx]) {
+                    goto label;
+                }
+            }
+        }
+    }
+    return;
+    label:
+
+    for (int z = 0; z < 2; z++) {
+        for (int x = 0; x < 2; x++) {
+            for (int y = 0; y < 2; y++) {
+                int idx = (locZ-z) * lenX * lenY + (locY-y) * lenX + locX-x;
+                if (locZ - z < 0) continue;
+                if (locY - y < 0) continue;
+                if (locX - x < 0) continue;
+
+                if (!req[idx]) {
+                    goto label2;
+                }
+            }
+        }
+    }
+    return;
+    label2:
+
+    int val = atomicAdd(&listIdx, 1);
+    arr[val] = {
+            locX, locY, locZ
+    };
 }
 
 Coordinate* gpu_coord;
+Coordinate* potentialShadowcasts;
+int potentialShadowcastCount;
 void setupCudaMemory() {
     gpuErrchk( cudaMalloc((void**) &gpu_coord, sizeof(Coordinate) * GPU_RETURN_SIZE) );
+    gpuErrchk( cudaMalloc((void**) &potentialShadowcasts, sizeof(Coordinate) * 4000000) );
 }
+
+int setupPotentialShadowcasts(bool *req, int lenX, int lenY, int lenZ, int fromY, int toY) {
+    int count = 0;
+    cudaMemcpyToSymbol(listIdx, &count, sizeof(int), 0, cudaMemcpyHostToDevice);
+    std::cout << lenX << "/"<<lenY << "/"<<lenZ<<"/"<<fromY<<"/"<<toY<<std::endl;
+
+    dim3 blockDim(16,4,16);
+    dim3 gridDim(ceil(lenX/16.0), ceil((toY-fromY)/4.0), ceil(lenZ/16.0));
+    findPotentialShadowcastDestinations<<<gridDim, blockDim>>>(req, lenX, lenY, lenZ, fromY, toY,  potentialShadowcasts);
+
+    gpuErrchk( cudaPeekAtLastError() );
+    gpuErrchk( cudaDeviceSynchronize() );
+
+    gpuErrchk(cudaMemcpyFromSymbol(&count, listIdx, sizeof(int), 0, cudaMemcpyDeviceToHost));
+
+    std::cout << count << std::endl;
+    potentialShadowcastCount = count;
+
+    return count;
+}
+
+
 
 int callShadowCast(bool *req, int lenX, int lenY, int lenZ,
                     int fromX, int fromY, int fromZ, int toX, int toY, int toZ,
@@ -139,18 +221,15 @@ int callShadowCast(bool *req, int lenX, int lenY, int lenZ,
     cudaMemcpyToSymbol(listIdx, &count, sizeof(int), 0, cudaMemcpyHostToDevice);
 
 
-    dim3 blockDim(32,1,32);
-        dim3 gridDim(ceil((toX - fromX) / 32.0),ceil((toY - fromY) / 1.0),ceil((toZ - fromZ) / 32.0));
-    shadowcast<<<gridDim, blockDim>>>(req, lenX, lenY, lenZ, fromX, fromY, fromZ,
-                                      (toX - fromX), (toY - fromY), (toZ - fromZ),
-                                      targetX, targetY, targetZ, offset, rad, gpu_coord);
+    shadowcast<<<1024, ceil(potentialShadowcastCount / 1024.0)>>>
+    (req, lenX, lenY, lenZ, fromX, fromY, fromZ, toX, toY, toZ,
+                                      targetX, targetY, targetZ, offset, rad, gpu_coord, potentialShadowcasts, potentialShadowcastCount);
 
     gpuErrchk( cudaPeekAtLastError() );
     gpuErrchk( cudaDeviceSynchronize() );
 
     gpuErrchk(cudaMemcpyFromSymbol(&count, listIdx, sizeof(int), 0, cudaMemcpyDeviceToHost));
 
-    std::cout << count << std::endl;
     gpuErrchk( cudaMemcpy(arr, gpu_coord, sizeof(Coordinate ) * count, cudaMemcpyDeviceToHost) );
 
     return count;

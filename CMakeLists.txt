@@ -9,4 +9,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/lambda")
 add_subdirectory("${PROJECT_SOURCE_DIR}/cli")
 add_subdirectory("${PROJECT_SOURCE_DIR}/container")
 
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/libraries/libnbtplusplus")
 #add_subdirectory(binary)

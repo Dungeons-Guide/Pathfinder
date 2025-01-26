@@ -10,7 +10,8 @@
 #include <vector>
 #include "CollisionState.h"
 
-typedef struct {
+class AlgorithmSettings {
+public:
     bool enderpearl;
     bool tntpearl;
     bool stonkdown;
@@ -21,7 +22,9 @@ typedef struct {
     int etherwarpRadius;
     float etherwarpLeeway;
     float etherwarpOffset;
-} AlgorithmSettings;
+
+    void ReadAlgorithmSettings(std::istream& istream);
+};
 
 
 enum PearlLandState:  uint8_t {
@@ -58,9 +61,9 @@ typedef struct {
 } Block;
 
 struct BlockWorld {
-    int xLen;
-    int zLen;
-    int yLen;
+    uint32_t xLen;
+    uint32_t zLen;
+    uint32_t yLen;
     std::vector<Block> blocks;
     Block getBlock(int x, int y, int z) {
         if (x < 0 || y < 0 || z < 0) return {  7, 0 };
@@ -77,9 +80,9 @@ struct BlockWorld {
 };
 
 struct OctNodeWorld {
-    int xLen;
-    int zLen;
-    int yLen;
+    uint32_t xLen;
+    uint32_t zLen;
+    uint32_t yLen;
     std::vector<OctNode> nodes;
 
     OctNode getOctNode(int  x, int  y, int  z) {
@@ -99,6 +102,7 @@ struct OctNodeWorld {
 class PathfindRequest {
 public:
     std::string id;
+    std::string hash;
     std::string uuid;
     std::string name;
     AlgorithmSettings settings;

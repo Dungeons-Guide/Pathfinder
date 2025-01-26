@@ -11,9 +11,9 @@
 
 enum ConnectionType : uint8_t {
     ConnectionType_STONK_EXIT = 0,
-    ConnectionType_STONK_WALK,
-    ConnectionType_WALK,
-    ConnectionType_ETHERWARP,
+    ConnectionType_STONK_WALK, // 1
+    ConnectionType_WALK, // 2
+    ConnectionType_ETHERWARP, // 3
     ConnectionType_DIG_DOWN,
     ConnectionType_ECHEST,
     ConnectionType_DIG_UP,

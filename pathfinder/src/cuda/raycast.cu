@@ -22,17 +22,16 @@ __device__ bool ashadowcast(bool* req,
                           int lenX, int lenY, int lenZ,
                           float locX, float locY, float locZ,
                           float targetX, float  targetY, float  targetZ) {
-
-    double dx = locX - targetX;
-    double dy = locY - targetY;
-    double dz = locZ - targetZ;
-    short maxVal = max(abs(dx), max(abs(dy), abs(dz)));
+    float dx = locX - targetX;
+    float dy = locY - targetY;
+    float dz = locZ - targetZ;
+    short maxVal = max(abs(dx), max(abs(dy), abs(dz))) * 9;
 
     dx /= maxVal;
     dy /= maxVal;
     dz /= maxVal;
 
-    for (short i = 0; i < maxVal; i++) {
+    for (short i = 0; i < maxVal-2; i++) {
         targetX += dx;
         targetY += dy;
         targetZ += dz;
@@ -40,7 +39,6 @@ __device__ bool ashadowcast(bool* req,
         short x = (short) targetX;
         short y = (short) targetY;
         short z = (short) targetZ;
-
         int idx = z * lenX * lenY + y * lenX + x;
         if (req[idx]) {
             return false;
@@ -95,29 +93,43 @@ __global__ void shadowcast(bool *req, int lenX, int lenY, int lenZ,
             for (int y = 0; y < 2; y++) {
                 bool flag = false;
                 int xTarget;
+//                long begin = clock64();
                 if (dx < 0) {
-                    xTarget = targetX + 0.5 + offset;
+                    xTarget = targetX + 0.499999 + offset;
                 } else {
-                    xTarget = targetX + 0.5 - offset;
+                    xTarget = targetX + 0.500001 - offset;
                 }
-                flag |= ashadowcast(req, lenX, lenY, lenZ, locX + x/2.0, locY+ y / 2.0, locZ + z/2.0, xTarget, targetY + 0.5,
-                                    targetZ + 0.5);
+                flag |= ashadowcast(req, lenX, lenY, lenZ, locX + x/2.0, locY+ y / 2.0, locZ + z/2.0,
+                                    xTarget, targetY + 0.499798, targetZ + 0.499889);
+//                long end = clock64();
+//                ahhh[atomicAdd(&listIdx2, 1)] = end-begin;
 
-                if (dy < 0) {
-                    xTarget = targetY + 0.5 + offset;
-                } else {
-                    xTarget = targetY + 0.5 - offset;
-                }
-                flag |= ashadowcast(req, lenX, lenY, lenZ, locX + x/2.0, locY + y / 2.0, locZ + z/2.0, targetX + 0.5, xTarget,
-                                    targetZ + 0.5);
-                
-                if (dz < 0) {
-                    xTarget = targetZ + 0.5 + offset;
-                } else {
-                    xTarget = targetZ + 0.5 - offset;
-                }
-                flag |= ashadowcast(req, lenX, lenY, lenZ, locX + x/2.0, locY + y / 2.0, locZ+ z/2.0, targetX + 0.5, targetY + 0.5,
-                                   xTarget);
+//                begin = clock64();
+//                if (!flag) {
+                    if (dy < 0) {
+                        xTarget = targetY + 0.499798 + offset;
+                    } else {
+                        xTarget = targetY + 0.500202 - offset;
+                    }
+                    flag |= ashadowcast(req, lenX, lenY, lenZ, locX + x/2.0, locY + y / 2.0, locZ + z/2.0,
+                                        targetX + 0.499999, xTarget, targetZ + 0.499889);
+//                }
+//                end = clock64();
+//                ahhh[atomicAdd(&listIdx2, 1)] = end-begin;
+
+//                begin = clock64();
+//                if (!flag) {
+                    if (dz < 0) {
+                        xTarget = targetZ + 0.499889 + offset;
+                    } else {
+                        xTarget = targetZ + 0.500114 - offset;
+                    }
+                    flag |= ashadowcast(req, lenX, lenY, lenZ, locX + x/2.0, locY + y / 2.0, locZ+ z/2.0,
+                                        targetX + 0.499999, targetY + 0.499798, xTarget);
+//                }
+//                end = clock64();
+//                ahhh[atomicAdd(&listIdx2, 1)] = end-begin;
+
 
                 if (flag) {
                     int val = atomicAdd(&listIdx, 1);
@@ -218,12 +230,12 @@ int callShadowCast(bool *req, int lenX, int lenY, int lenZ,
                    short targetX, short targetY, short targetZ, float offset, int rad, Coordinate* arr) {
 
     int count = 0;
-    cudaMemcpyToSymbol(listIdx, &count, sizeof(int), 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(listIdx, &count, sizeof(int), 0, cudaMemcpyHostToDevice);;
 
 
-    shadowcast<<<1024, ceil(potentialShadowcastCount / 1024.0)>>>
+    shadowcast<<<ceil(potentialShadowcastCount / 1024.0), 1024>>>
     (req, lenX, lenY, lenZ, fromX, fromY, fromZ, toX, toY, toZ,
-                                      targetX, targetY, targetZ, offset, rad, gpu_coord, potentialShadowcasts, potentialShadowcastCount);
+                                      targetX, targetY, targetZ, offset, rad, gpu_coord, potentialShadowcasts,potentialShadowcastCount);
 
     gpuErrchk( cudaPeekAtLastError() );
     gpuErrchk( cudaDeviceSynchronize() );

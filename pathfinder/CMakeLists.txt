@@ -47,6 +47,7 @@ add_library(pathfinder
 target_include_directories(pathfinder PUBLIC
         "${PROJECT_SOURCE_DIR}/pathfinder/include")
 
+
 find_package(Boost 1.45.0 REQUIRED COMPONENTS system iostreams)
 
 if(NOT Boost_FOUND)
@@ -57,7 +58,7 @@ message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 message(STATUS "Boost_VERSION: ${Boost_VERSION}")
 
 target_include_directories(pathfinder PRIVATE ${Boost_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-target_link_libraries(pathfinder ${Boost_LIBRARIES} ${PATHFINDER_EXTRA_LIBS})
+target_link_libraries(pathfinder ${Boost_LIBRARIES} ${PATHFINDER_EXTRA_LIBS} nbt++)
 
 
 #set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS} "-g -G")

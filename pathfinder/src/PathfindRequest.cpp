@@ -6,53 +6,50 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
+#include <io/stream_reader.h>
+#include <tag_primitive.h>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
-uint16_t _readShort(std::vector<unsigned char>::iterator &it) {
-    return (*(it++) << 8) | *(it++);
+uint16_t _readShort(std::istream& in) {
+    uint8_t buffer[2];
+    in.read(reinterpret_cast<char *>(buffer), 2);
+    return buffer[0] << 8 | buffer[1];
 }
-uint8_t _readByte(std::vector<unsigned char>::iterator  &it) {
-    return (*(it++));
+uint8_t _readByte(std::istream& in) {
+    uint8_t buffer;
+    in.read(reinterpret_cast<char *>(&buffer), 1);
+    return buffer;
 }
-uint32_t _readInt(std::vector<unsigned char>::iterator &it) {
-    return (*(it++) << 24)| (*(it++) << 16) | (*(it++) << 8) | *(it++);
+uint32_t _readInt(std::istream& in) {
+    uint8_t buffer[4];
+    in.read(reinterpret_cast<char *>(buffer), 4);
+
+    return buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3];
 }
 
-bool _readBool(std::vector<unsigned char>::iterator  &it) {
-    if (_readByte(it) > 0) return true;
+bool _readBool(std::istream& in) {
+    if (_readByte(in) > 0) return true;
     return false;
 }
 
-float _readFloat(std::vector<unsigned char>::iterator &it) {
-    uint32_t b4float = _readInt(it);
+float _readFloat(std::istream& in) {
+    uint32_t b4float = _readInt(in);
     return *reinterpret_cast<float*>(&b4float);
 }
 
-std::string _readUTF(std::vector<unsigned char>::iterator &it) {
-    uint16_t len = _readShort(it);
-    return {it, it += len};
-}
-template<typename InIter, typename OutIter, typename InT, typename OutT>
-void combine_pairs(InIter in, InIter in_end, OutIter out, OutT (*func)(InT, InT)) {
-    while(1) {
-        if(in == in_end) {
-            break;
-        }
-
-        InT &left = *in++;
-
-        if(in == in_end) {
-            break;
-        }
-
-        InT &right = *in++;
-
-        *out++ = func(left, right);
-    }
+std::string _readFixed(std::istream& in, std::streamsize len) {
+    char buffer[len + 1];
+    in.read(buffer, len);
+    buffer[len] = 0;
+    return {buffer};
 }
 
-Block _combine_two_bytes(uint8_t a, uint8_t  b) {
-    return {a , b};
+std::string _readUTF(std::istream& in) {
+    uint16_t len = _readShort(in);
+    return _readFixed(in, len);
 }
+
 OctNode _convert_octnode(uint8_t a) {
     return {
         ((a >> 7 & 1) > 0),
@@ -61,79 +58,103 @@ OctNode _convert_octnode(uint8_t a) {
     };
 }
 
-void PathfindRequest::ReadRequest(std::istream& infile) {
-//    std::ifstream infile(file, std::ios_base::binary);
+void AlgorithmSettings::ReadAlgorithmSettings(std::istream& in) {
+    auto rootCompound = nbt::io::read_compound(in).second;
 
-    std::vector<unsigned char> buffer( (std::istreambuf_iterator<char>(infile)),{} );
-    std::vector<unsigned char>::iterator head = buffer.begin();
-
-
-    std::string magicVal = _readUTF(head);
-    if (magicVal != "DGPF") {
-        throw ("Invalid Magic Value: Expected DGPF, got "+magicVal);
+    auto& version = rootCompound->at("version");
+    if (version.get_type() != nbt::tag_type::Int) {
+        throw ("Invalid version: no version in algorithm settings");
+    }
+    if (version.as<nbt::tag_int>().get() != 2) {
+        throw ("Invalid algorithm settings version: 2");
     }
 
-    id = _readUTF(head);
-    uuid = _readUTF(head);
-//    if (uuid != "70a1451a-5430-40bd-b20b-13245aac910a") {
-//        std::cerr << "only market";
-//        exit(-1);
-//
-//    }
-    name = _readUTF(head);
+    enderpearl = rootCompound->at("enderpearl").as<nbt::tag_byte>().get() != 0;
+    tntpearl = rootCompound->at("tntpearl").as<nbt::tag_byte>().get() != 0;
+    stonkdown = rootCompound->at("stonkDown").as<nbt::tag_byte>().get() != 0;
+    stonkechest = rootCompound->at("stonkEChest").as<nbt::tag_byte>().get() != 0;
+    stonkteleport = rootCompound->at("stonkTeleport").as<nbt::tag_byte>().get() != 0;
+    etherwarp = rootCompound->at("routeEtherwarp").as<nbt::tag_byte>().get() != 0;
+    maxStonkLen = rootCompound->at("maxStonk").as<nbt::tag_int>().get();
+    etherwarpRadius = rootCompound->at("etherwarpRadius").as<nbt::tag_int>().get();
+    etherwarpLeeway = rootCompound->at("etherwarpLeeway").as<nbt::tag_double>().get();
+    etherwarpOffset = rootCompound->at("etherwarpOffset").as<nbt::tag_double>().get();
+}
 
-    magicVal = _readUTF(head);
+void PathfindRequest::ReadRequest(std::istream& in) {
+//    std::ifstream infile(file, std::ios_base::binary);
+
+    std::string magicVal = _readFixed(in, 8);
+    if (magicVal != "DGPFREQ2") {
+        throw ("Invalid Magic Value: Expected DGPFREQ2, got "+magicVal);
+    }
+
+    uint32_t version = _readInt(in);
+    if (version != 1) {
+        throw ("Invalid version: Expected 1, got "+version);
+    }
+
+    id = _readUTF(in);
+    hash = _readUTF(in);
+    uuid = _readUTF(in);
+    name = _readUTF(in);
+
+    blockWorld.xLen = _readInt(in);
+    blockWorld.zLen = _readInt(in);
+    blockWorld.yLen = _readInt(in);
+
+    octNodeWorld.xLen = blockWorld.xLen * 2;
+    octNodeWorld.zLen = blockWorld.yLen * 2;
+    octNodeWorld.yLen = blockWorld.zLen * 2;
+
+    magicVal = _readFixed(in, 4);
     if (magicVal != "ALGO") {
         throw ("Invalid Magic Value: Expected ALGO, got "+magicVal);
     }
+    // instead read nbt.
+    settings.ReadAlgorithmSettings(in);
 
-    settings.enderpearl = _readBool(head);
-    settings.tntpearl = _readBool(head);
-    settings.stonkdown = _readBool(head);
-    settings.stonkechest = _readBool(head);
-    settings.stonkteleport = _readBool(head);
-    settings.etherwarp = _readBool(head);
-    settings.maxStonkLen = _readInt(head);
-    settings.etherwarpRadius = _readInt(head);
-    settings.etherwarpLeeway = _readFloat(head);
-    settings.etherwarpOffset = _readFloat(head);
-
-
-    magicVal = _readUTF(head);
+    magicVal = _readFixed(in, 4);
     if (magicVal != "TRGT") {
         throw ("Invalid Magic Value: Expected TRGT, got "+magicVal);
     }
 
-    uint32_t target_size = _readInt(head);
+    uint32_t target_size = _readInt(in);
     for (uint32_t i = 0; i < target_size; i++) {
-        auto x = static_cast<int32_t>(_readInt(head));
-        auto y = static_cast<int32_t>(_readInt(head));
-        auto z = static_cast<int32_t>(_readInt(head));
+        auto x = static_cast<int32_t>(_readInt(in));
+        auto y = static_cast<int32_t>(_readInt(in));
+        auto z = static_cast<int32_t>(_readInt(in));
 
         target.push_back({x,y,z});
     }
 
-    magicVal = _readUTF(head);
+    magicVal = _readFixed(in, 4);
     if (magicVal != "WRLD") {
         throw ("Invalid Magic Value: Expected WRLD, got "+magicVal);
     }
-    blockWorld.xLen = _readInt(head);
-    blockWorld.zLen = _readInt(head);
-    blockWorld.yLen = _readInt(head);
-    blockWorld.blocks.resize(blockWorld.xLen * blockWorld.yLen * blockWorld.zLen);
-    combine_pairs(head, head + (blockWorld.xLen * blockWorld.yLen * blockWorld.zLen * 2), blockWorld.blocks.begin(), _combine_two_bytes);
-    head += (blockWorld.xLen * blockWorld.yLen * blockWorld.zLen * 2);
 
-    magicVal = _readUTF(head);
+//    boost::iostreams::filtering_istream compressed_infile;
+//    compressed_infile.push(boost::iostreams::zlib_decompressor());
+//    compressed_infile.push(in);
+
+    blockWorld.blocks.resize(blockWorld.xLen * blockWorld.yLen * blockWorld.zLen);
+    for (int i = 0; i < blockWorld.xLen * blockWorld.yLen * blockWorld.zLen; i++) {
+        blockWorld.blocks[i] = Block{_readByte(in), _readByte(in)};
+    }
+
+
+    magicVal = _readFixed(in, 4);
     if (magicVal != "CLPL") {
         throw ("Invalid Magic Value: Expected CLPL, got "+magicVal);
     }
-    octNodeWorld.xLen = _readInt(head);
-    octNodeWorld.zLen = _readInt(head);
-    octNodeWorld.yLen = _readInt(head);
+
+//    boost::iostreams::filtering_istream compressed_infile2;
+//    compressed_infile2.push(boost::iostreams::zlib_decompressor());
+//    compressed_infile2.push(in);
     octNodeWorld.nodes.resize(octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen);
-    std::transform(head,  head + (octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen), octNodeWorld.nodes.begin(), _convert_octnode );
-    head += (octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen);
+    for (int i = 0; i < octNodeWorld.xLen * octNodeWorld.yLen * octNodeWorld.zLen; i++) {
+        octNodeWorld.nodes[i] = _convert_octnode(_readByte(in));
+    }
 }
 
 

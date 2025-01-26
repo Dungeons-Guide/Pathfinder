@@ -10,3 +10,4 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/pathfinder")
 add_subdirectory("${PROJECT_SOURCE_DIR}/container")
 
 #add_subdirectory(binary)
+add_subdirectory("${PROJECT_SOURCE_DIR}/libraries/libnbtplusplus")

@@ -126,7 +126,7 @@ void PathfindResult::WriteTo(std::ostream& outfile_1, std::string source) {
     _writeUTF(outfile_1, uuid);
     _writeUTF(outfile_1, roomstate);
     _writeUTF(outfile_1, source);
-    _writeUTF(outfile_1, "ALGO");
+    _writeBytes(outfile_1, "ALGO");
 
     settings->WriteAlgorithmSettings(outfile_1);
 

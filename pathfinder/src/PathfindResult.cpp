@@ -6,14 +6,18 @@
 #include <fstream>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
-
+#include <random>
+#include <sstream>
+#include <iomanip>
 
 void PathfindResult::Init(Pathfinder &pathfinder) {
     this->id = pathfinder.request.id;
-    this->name = pathfinder.request.name;
-    this->uuid = pathfinder.request.uuid;
+    this->hash = pathfinder.request.idhash;
+    this->name = pathfinder.request.roomname;
+    this->roomstate = pathfinder.request.roomstate;
+    this->uuid = pathfinder.request.roomuuid;
     this->target = pathfinder.request.target;
-    this->settings = pathfinder.request.settings;
+    this->settings = &pathfinder.request.settings;
     this->resultXStart = 0;
     this->resultYStart = pathfinder.minY;
     this->resultZStart = 0;
@@ -84,6 +88,9 @@ void _writeUTF(std::ostream & stream, std::string value) {
     _writeShort(stream, value.size());
     stream.write(value.c_str(), value.size());
 }
+void _writeBytes(std::ostream & stream, std::string value) {
+    stream.write(value.c_str(), value.size());
+}
 void _writeBool(std::ostream & stream, bool wat) {
     _writeByte(stream, wat ? 1 : 0);
 }
@@ -93,34 +100,46 @@ void _writeFloat(std::ostream & stream, float f) {
 }
 
 
-void PathfindResult::WriteTo(std::ostream& outfile_1) {
+std::string generateRandom128BitHex() {
+    std::random_device rd;
+    std::mt19937_64 gen(rd()); // Use 64-bit Mersenne Twister for random numbers
+    std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX);
+
+    std::ostringstream oss;
+    for (int i = 0; i < 2; ++i) { // 128 bits = 2 * 64-bit numbers
+        uint64_t randomNum = dist(gen);
+        oss << std::hex << std::setw(16) << std::setfill('0') << randomNum;
+    }
+
+    return oss.str();
+}
+
+
+void PathfindResult::WriteTo(std::ostream& outfile_1, std::string source) {
 //
 
-
-    _writeUTF(outfile_1, "RDGPF");
+    _writeBytes(outfile_1, "DGPFRES2");
+    _writeInt(outfile_1, 1);
+    _writeUTF(outfile_1, generateRandom128BitHex());
+    _writeUTF(outfile_1, hash);
     _writeUTF(outfile_1, id);
     _writeUTF(outfile_1, uuid);
-    _writeUTF(outfile_1, name);
+    _writeUTF(outfile_1, roomstate);
+    _writeUTF(outfile_1, source);
     _writeUTF(outfile_1, "ALGO");
 
-    _writeBool(outfile_1, settings.enderpearl);
-    _writeBool(outfile_1, settings.tntpearl);
-    _writeBool(outfile_1, settings.stonkdown);
-    _writeBool(outfile_1, settings.stonkechest);
-    _writeBool(outfile_1, settings.stonkteleport);
-    _writeBool(outfile_1, settings.etherwarp);
-    _writeInt(outfile_1, settings.maxStonkLen);
-    _writeInt(outfile_1, settings.etherwarpRadius);
-    _writeFloat(outfile_1, settings.etherwarpLeeway);
-    _writeFloat(outfile_1, settings.etherwarpOffset);
-    _writeUTF(outfile_1, "TRGT");
+    settings->WriteAlgorithmSettings(outfile_1);
+
+
+    _writeBytes(outfile_1, "TRGT");
     _writeInt(outfile_1, target.size());
     for (const auto &item: target) {
         _writeInt(outfile_1, item.x);
         _writeInt(outfile_1, item.y);
         _writeInt(outfile_1, item.z);
     }
-    _writeUTF(outfile_1, "NODE");
+    _writeBytes(outfile_1, "NODE");
+    _writeByte(outfile_1, 1);
 
     boost::iostreams::filtering_ostream outfile;
     outfile.push(boost::iostreams::zlib_compressor());
@@ -138,5 +157,5 @@ void PathfindResult::WriteTo(std::ostream& outfile_1) {
         _writeByte(outfile, item.type);
         _writeFloat(outfile, item.gScore); // 8 byte per block. umm... lol.
     }
-    _writeUTF(outfile, "EOF");
+    _writeBytes(outfile, "EOF");
 }

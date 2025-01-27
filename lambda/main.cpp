@@ -91,7 +91,7 @@ static invocation_response my_handler(invocation_request const& req, Aws::S3::S3
     }
 
 
-    AWS_LOGSTREAM_INFO(TAG, "ID: " << pathfindRequest.uuid << " NAME: " << pathfindRequest.name);
+    AWS_LOGSTREAM_INFO(TAG, "ID: " << pathfindRequest.roomuuid << " NAME: " << pathfindRequest.roomname);
     AWS_LOGSTREAM_INFO(TAG, "PF ID: " << pathfindRequest.id);
     AWS_LOGSTREAM_INFO(TAG, "Target Cnt: " << pathfindRequest.target.size() << " World Size: " <<pathfindRequest.blockWorld.xLen * pathfindRequest.blockWorld.yLen * pathfindRequest.blockWorld.zLen << " Node Size: " << (
             pathfindRequest.octNodeWorld.xLen * pathfindRequest.octNodeWorld.yLen * pathfindRequest.octNodeWorld.zLen));

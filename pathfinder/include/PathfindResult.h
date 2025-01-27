@@ -23,10 +23,12 @@ struct ResultNode {
 
 class PathfindResult {
 public:
+    std::string hash;
     std::string id;
     std::string uuid;
     std::string name;
-    AlgorithmSettings settings;
+    std::string roomstate;
+    AlgorithmSettings* settings;
     std::vector<Coordinate> target;
     std::vector<ResultNode> results;
     uint16_t resultXLen;
@@ -37,7 +39,9 @@ public:
     uint16_t resultZStart;
 
     void Init(Pathfinder& pathfinder);
-    void WriteTo(std::ostream& file);
+    void WriteTo(std::ostream& file, std::string source);
+
+
 };
 
 #endif //PATHFINDER2_PATHFINDRESULT_H

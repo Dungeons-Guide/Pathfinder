@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    std::cout << "ID: " << request.uuid << " NAME: " << request.name << std::endl;
+    std::cout << "ID: " << request.roomuuid << " NAME: " << request.roomname << std::endl;
     std::cout << "PF ID: " << request.id << std::endl;
     std::cout << "Target Cnt: "<< request.target.size() << " World Size: " << request.blockWorld.xLen * request.blockWorld.yLen * request.blockWorld.zLen << std::endl;
     std::cout << "Etherwarp settings: " << request.settings.etherwarpRadius << " leeway " << request.settings.etherwarpLeeway << " offset "<<request.settings.etherwarpOffset << std::endl;
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
     std::ofstream outfile_1(output, std::ios_base::binary);
     PathfindResult result;
     result.Init(pathfinder);
-    result.WriteTo(outfile_1);
+    result.WriteTo(outfile_1, "Manual Calc");
 
 
     return 0;

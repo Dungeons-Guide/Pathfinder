@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <fstream>
 #include <io/stream_reader.h>
-#include <tag_primitive.h>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 
@@ -59,7 +58,7 @@ OctNode _convert_octnode(uint8_t a) {
 }
 
 void AlgorithmSettings::ReadAlgorithmSettings(std::istream& in) {
-    auto rootCompound = nbt::io::read_compound(in).second;
+    rootCompound = nbt::io::read_compound(in).second;
 
     auto& version = rootCompound->at("version");
     if (version.get_type() != nbt::tag_type::Int) {
@@ -81,6 +80,10 @@ void AlgorithmSettings::ReadAlgorithmSettings(std::istream& in) {
     etherwarpOffset = rootCompound->at("etherwarpOffset").as<nbt::tag_double>().get();
 }
 
+void AlgorithmSettings::WriteAlgorithmSettings(std::ostream &ostream) {
+    nbt::io::write_tag("", *rootCompound, ostream);
+}
+
 void PathfindRequest::ReadRequest(std::istream& in) {
 //    std::ifstream infile(file, std::ios_base::binary);
 
@@ -95,9 +98,10 @@ void PathfindRequest::ReadRequest(std::istream& in) {
     }
 
     id = _readUTF(in);
-    hash = _readUTF(in);
-    uuid = _readUTF(in);
-    name = _readUTF(in);
+    idhash = _readUTF(in);
+    roomuuid = _readUTF(in);
+    roomname = _readUTF(in);
+    roomstate = _readUTF(in);
 
     blockWorld.xLen = _readInt(in);
     blockWorld.zLen = _readInt(in);

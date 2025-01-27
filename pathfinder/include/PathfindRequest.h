@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include "CollisionState.h"
+#include <tag_primitive.h>
 
 class AlgorithmSettings {
 public:
@@ -23,7 +24,11 @@ public:
     float etherwarpLeeway;
     float etherwarpOffset;
 
+    std::unique_ptr<nbt::tag_compound> rootCompound;
+
+
     void ReadAlgorithmSettings(std::istream& istream);
+    void WriteAlgorithmSettings(std::ostream &ostream);
 };
 
 
@@ -102,9 +107,10 @@ struct OctNodeWorld {
 class PathfindRequest {
 public:
     std::string id;
-    std::string hash;
-    std::string uuid;
-    std::string name;
+    std::string idhash;
+    std::string roomuuid;
+    std::string roomname;
+    std::string roomstate;
     AlgorithmSettings settings;
     std::vector<Coordinate> target;
     BlockWorld blockWorld;

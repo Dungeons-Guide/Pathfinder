@@ -105,7 +105,7 @@ int main()
     }
 
 
-    std::cout << "ID: " << pathfindRequest.uuid << " NAME: " << pathfindRequest.name << std::endl;
+    std::cout << "ID: " << pathfindRequest.roomuuid << " NAME: " << pathfindRequest.roomname << std::endl;
     std::cout << "PF ID: " << pathfindRequest.id << std::endl;
     std::cout << "Target Cnt: " << pathfindRequest.target.size() << " World Size: " <<pathfindRequest.blockWorld.xLen * pathfindRequest.blockWorld.yLen * pathfindRequest.blockWorld.zLen << " Node Size: " << (
             pathfindRequest.octNodeWorld.xLen * pathfindRequest.octNodeWorld.yLen * pathfindRequest.octNodeWorld.zLen) << std::endl;
@@ -150,7 +150,9 @@ int main()
         request2.WithBucket(std::getenv("TARGET_BUCKET")).WithKey(key);
 
         std::shared_ptr<Aws::IOStream> inputData = Aws::MakeShared<Aws::StringStream>("StringStream", std::stringstream::in | std::stringstream::out | std::stringstream::binary);
-        result.WriteTo(*inputData);
+        std::string blah = "Remote Calculation Service ID ";
+        blah += std::getenv("REQUEST_ID");
+        result.WriteTo(*inputData, blah);
         request2.SetBody(inputData);
 
 

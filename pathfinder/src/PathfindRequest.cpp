@@ -108,8 +108,8 @@ void PathfindRequest::ReadRequest(std::istream& in) {
     blockWorld.yLen = _readInt(in);
 
     octNodeWorld.xLen = blockWorld.xLen * 2;
-    octNodeWorld.zLen = blockWorld.yLen * 2;
-    octNodeWorld.yLen = blockWorld.zLen * 2;
+    octNodeWorld.zLen = blockWorld.zLen * 2;
+    octNodeWorld.yLen = blockWorld.yLen * 2;
 
     magicVal = _readFixed(in, 4);
     if (magicVal != "ALGO") {

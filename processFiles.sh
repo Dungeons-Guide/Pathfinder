@@ -3,7 +3,7 @@
 
 doit() {
    realName=`basename $1`
-   cli/pathfinder-cli "requests/$realName" "results/$realName.pfres"
+   cmake-build-release/cli/pathfinder-cli "requests/$realName" "results/$realName.pfres"
 }
 export -f doit
 
